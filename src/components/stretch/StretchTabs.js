@@ -3,12 +3,10 @@ import { Card, Tabs, Space } from 'antd';
 import { 
   HeartOutlined, 
   BookOutlined,
-  PlayCircleOutlined,
-  AudioOutlined
+  PlayCircleOutlined
 } from '@ant-design/icons';
 import QuickStretchesTab from './QuickStretchesTab';
 import TipsTab from './TipsTab';
-import VoiceAssistant from './VoiceAssistant';
 
 const { TabPane } = Tabs;
 
@@ -69,18 +67,6 @@ const StretchTabs = ({ selectedExercise }) => {
           key="2"
         >
           <TipsTab />
-        </TabPane>
-
-        <TabPane 
-          tab={
-            <span>
-              <AudioOutlined />
-              Voice Assistant
-            </span>
-          } 
-          key="3"
-        >
-          <VoiceAssistant />
         </TabPane>
       </Tabs>
     </Card>

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Button, Tag, Card, Space, Spin } from 'antd';
 import { 
   ClockCircleOutlined,
-  PlayCircleOutlined
+  PlayCircleOutlined,
+  AudioOutlined
 } from '@ant-design/icons';
+import VoiceAssistant from './VoiceAssistant';
 
 const { Title, Text } = Typography;
 
@@ -370,6 +372,11 @@ const QuickStretchesTab = ({ selectedExercise }) => {
           </div>
         )}
       </Card>
+
+      {/* Simple Audio Icon Button */}
+      <div style={{ textAlign: 'center', marginTop: 16 }}>
+      <VoiceAssistant exercise={currentExercise} />
+      </div>
     </div>
   );
 };
