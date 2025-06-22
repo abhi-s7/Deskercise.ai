@@ -5,15 +5,10 @@ import { HeartOutlined } from "@ant-design/icons";
 import StretchWebcam from "../components/stretch/StretchWebcam";
 import StretchTabs from "../components/stretch/StretchTabs";
 
-const { Title, Paragraph } = Typography;
+
+const { Title } = Typography;
 
 const Stretch = () => {
-  const navigate = useNavigate();
-
-  const handleBackClick = () => {
-    navigate("/");
-  };
-
   return (
     <div style={{
       padding: "32px",
