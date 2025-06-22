@@ -7,6 +7,7 @@ import Header from './components/layout/Header';
 import Home from './pages/Home';
 import Stretch from './pages/Stretch';
 import Pomodoro from './pages/Pomodoro';
+import PosturePage from './pages/PosturePage';
 import './App.css';
 
 const { Content } = Layout;
@@ -27,6 +28,7 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/pomodoro" element={<Pomodoro />} />
           <Route path="/stretch" element={<Stretch />} />
+          <Route path="/posture" element={<PosturePage />} />
         </Routes>
       </Content>
     </Layout>
