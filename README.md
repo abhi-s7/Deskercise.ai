@@ -1,4 +1,4 @@
-# 🏃‍♂️ Deskercise
+# 🏃‍♂️ Deskercise.AI
 
 *Your AI-Powered Desk Wellness Companion*
 
@@ -23,7 +23,12 @@ Millions of people spend hours glued to screens, developing "tech neck," stiffne
 
 ## 💡 Our Solution
 
-**Deskercise** transforms your workspace into a wellness station with AI-powered stretch coaching that actually works for real environments.
+**Deskercise.AI** transforms your workspace into a wellness station with AI-powered stretch coaching that actually works for real environments.
+
+
+> "Hour 28 of our hackathon — the rest of the venue looked like a caffeine-fueled zombie apocalypse. Meanwhile, our team was doing shoulder rolls guided by our own AI coach every Pomodoro break. While others crashed at 3AM, we were still sharp, energized, and coding clean. We didn't just build Deskercise; we lived it, and it literally saved our hackathon." 
+>
+> -- The Deskercise.AI Team, UC Berkeley AI Hackathon 2025 
 
 ---
 
@@ -66,6 +71,10 @@ git clone https://github.com/yourusername/deskercise.git
 cd deskercise
 npm install
 
+# Set up environment variables
+cp sample.env .env
+# Edit .env with your actual API keys (see API Setup section below)
+
 # Start development server
 npm start
 ```
@@ -73,7 +82,51 @@ npm start
 **Requirements:** 
 - Node.js 14+
 - Modern browser with webcam
-- **Google Calendar Access**: Contact team for API access permissions
+- API keys for Google Calendar, Gemini AI, and Vapi Voice AI
+
+---
+
+## 🔑 API Setup
+
+Deskercise requires several API keys to function properly. Follow these steps to get your keys:
+
+### 1. Google APIs (Calendar & OAuth)
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable the following APIs:
+   - Google Calendar API
+   - Google+ API
+4. Create OAuth 2.0 credentials for `REACT_APP_GOOGLE_CLIENT_ID`
+5. Create API key for `REACT_APP_GOOGLE_API_KEY`
+
+### 2. Google Gemini AI
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Create a new API key
+3. Add it as `REACT_APP_GEMINI_API_KEY`
+
+### 3. Vapi Voice AI
+1. Sign up at [Vapi.ai](https://vapi.ai/)
+2. Create a new assistant
+3. Get your API key and assistant ID
+4. Add them as `REACT_APP_VAPI_API_KEY` and `REACT_APP_VAPI_ASSISTANT_ID`
+
+### Environment Variables
+Copy `sample.env` to `.env` and replace the placeholder values:
+
+```bash
+cp sample.env .env
+```
+
+Then edit `.env` with your actual API keys:
+```
+REACT_APP_GOOGLE_CLIENT_ID=your_actual_google_client_id
+REACT_APP_GOOGLE_API_KEY=your_actual_google_api_key
+REACT_APP_GEMINI_API_KEY=your_actual_gemini_api_key
+REACT_APP_VAPI_API_KEY=your_actual_vapi_api_key
+REACT_APP_VAPI_ASSISTANT_ID=your_actual_vapi_assistant_id
+```
+
+**Note:** Never commit your `.env` file to version control. It's already included in `.gitignore`.
 
 ---
 
@@ -113,7 +166,7 @@ Webcam Feed ←→ Real-time Feedback ←→ Vapi Voice Coach
 <td align="center">
 <b>Abhishek Kumar</b><br>
 <i>Full Stack Lead</i><br>
-<a href="https://www.linkedin.com/in/abhi-k7/">LinkedIn</a>
+<a href="https://www.linkedin.com/in/abhi-s7/">LinkedIn</a>
 </td>
 <td align="center">
 <b>Mohamad Mansour</b><br>
