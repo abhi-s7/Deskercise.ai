@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Stretch from './pages/Stretch';
 import Pomodoro from './pages/Pomodoro';
 import PosturePage from './pages/PosturePage';
+import Calendar from './pages/Calendar';
 import './App.css';
 
 const { Content } = Layout;
@@ -29,6 +30,7 @@ function AppContent() {
           <Route path="/pomodoro" element={<Pomodoro />} />
           <Route path="/stretch" element={<Stretch />} />
           <Route path="/posture" element={<PosturePage />} />
+          <Route path="/calendar" element={<Calendar />} />
         </Routes>
       </Content>
     </Layout>
