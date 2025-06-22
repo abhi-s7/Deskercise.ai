@@ -1,0 +1,41 @@
+<script>
+  var vapiInstance = null;
+  const assistant = ""; // assistant ID
+  const apiKey = ""; // public key
+  let customPrompt = "I have slouched sholders and my back is bent.";
+
+  const buttonConfig = {}; // Modify this as required
+
+  (function (d, t) {
+    var g = document.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    g.src =
+      "https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js";
+    g.defer = true;
+    g.async = true;
+    s.parentNode.insertBefore(g, s);
+
+    g.onload = function () {
+      window.vapiSDK.run({
+        apiKey: apiKey,
+        assistant: assistant,
+        config: buttonConfig,
+        assistant_overrides: {
+          model: {
+            messages: [
+              {
+                role: "system",
+                content: "You are a helpful posture coach assistant who gives friendly advice on sitting posture and taking stretch breaks. Using the following in",
+              },
+              {
+                role: "user",
+                content: customPrompt,
+              },
+            ],
+          },
+        },
+      });
+    };
+
+  })(document, "script");
+</script>
