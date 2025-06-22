@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { Card, Form, Select, InputNumber, Button, Divider } from 'antd';
+import { Card, Form, Select, InputNumber, Button } from 'antd';
 
 const { Option } = Select;
 
-const PomodoroSettings = () => {
+const PomodoroSettings = ({ onConfirm }) => {
   const [form] = Form.useForm();
-  const [workTimeType, setWorkTimeType] = useState('preset');
+  const [workDuration, setWorkDuration] = useState(1500);
 
   const onFinish = (values) => {
-    console.log('Form values:', values);
+    onConfirm(values);
+  };
+
+  const handleWorkDurationChange = (value) => {
+    setWorkDuration(value);
   };
 
   return (
@@ -29,38 +33,34 @@ const PomodoroSettings = () => {
         layout="vertical"
         onFinish={onFinish}
         initialValues={{
-          workTimeType: 'preset',
-          workTimePreset: 25,
-          workTimeCustom: 25,
+          workDuration: 1500,
           cycles: 4
         }}
       >
-        
-        <Form.Item label="Time Type" name="workTimeType">
-          <Select onChange={(value) => setWorkTimeType(value)}>
-            <Option value="preset">Preset</Option>
+        <Form.Item label="Work Duration" name="workDuration">
+          <Select
+            onChange={handleWorkDurationChange}
+            placeholder="Select work duration"
+          >
+            <Option value={10}>10 seconds</Option>
+            <Option value={300}>5 minutes</Option>
+            <Option value={600}>10 minutes</Option>
+            <Option value={900}>15 minutes</Option>
+            <Option value={1200}>20 minutes</Option>
+            <Option value={1500}>25 minutes</Option>
+            <Option value={1800}>30 minutes</Option>
+            <Option value={3600}>1 hour</Option>
             <Option value="custom">Custom</Option>
           </Select>
         </Form.Item>
 
-        {workTimeType === 'preset' ? (
-          <Form.Item label="Work Duration" name="workTimePreset">
-            <Select>
-              <Option value={15}>15 minutes</Option>
-              <Option value={20}>20 minutes</Option>
-              <Option value={25}>25 minutes</Option>
-              <Option value={30}>30 minutes</Option>
-              <Option value={45}>45 minutes</Option>
-              <Option value={60}>60 minutes</Option>
-            </Select>
-          </Form.Item>
-        ) : (
-          <Form.Item label="Custom Work Duration (minutes)" name="workTimeCustom">
+        {workDuration === 'custom' && (
+          <Form.Item label="Custom Duration (seconds)" name="customWorkDuration">
             <InputNumber
               min={1}
-              max={120}
+              max={7200}
               style={{ width: '100%' }}
-              placeholder="Enter minutes"
+              placeholder="Enter seconds"
             />
           </Form.Item>
         )}
@@ -76,7 +76,7 @@ const PomodoroSettings = () => {
 
         <Form.Item style={{ marginTop: 32 }}>
           <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
-            Save Settings
+            Confirm Settings
           </Button>
         </Form.Item>
       </Form>

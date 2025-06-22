@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ConfigProvider, Layout } from 'antd';
 import { themeConfig } from './theme/themeConfig';
+import { SessionProvider } from './context/SessionContext';
 import Header from './components/layout/Header';
 import Home from './pages/Home';
 import Stretch from './pages/Stretch';
@@ -35,9 +36,11 @@ function AppContent() {
 function App() {
   return (
     <ConfigProvider theme={themeConfig}>
-      <Router>
-        <AppContent />
-      </Router>
+      <SessionProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </SessionProvider>
     </ConfigProvider>
   );
 }
