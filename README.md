@@ -7,6 +7,10 @@
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Pose%20Detection-FF6B35?style=for-the-badge)](https://mediapipe.dev/)
 [![Vapi](https://img.shields.io/badge/Vapi-Voice%20AI-purple?style=for-the-badge)](https://vapi.ai/)
 
+<div align="center">
+  <img src="docs/main.jpg" alt="Deskercise Demo" width="600" style="border-radius: 10px; margin: 20px 0;">
+</div>
+
 > 🔗 **[View on DevPost](https://devpost.com/software/deskercise)** | 📊 **[Presentation](docs/Deskercise%20Pitch%20Deck.pdf)**
 
 ---
@@ -66,7 +70,10 @@ npm install
 npm start
 ```
 
-**Requirements:** Node.js 14+, modern browser with webcam
+**Requirements:** 
+- Node.js 14+
+- Modern browser with webcam
+- **Google Calendar Access**: Contact team for API access permissions
 
 ---
 
