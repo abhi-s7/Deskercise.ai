@@ -93,7 +93,7 @@ function checkShoulderRollUp(lms, shoulderTol = 20, shrinkageMin = 0.02) {
 }
 
 // returns { ok, issues[], metrics{} }
-function checkShoulderRollDown(lms, shoulderTol = 20, elongationMin = 0.01) {
+function checkShoulderRollDown(lms, shoulderTol = 20, elongationMin = 0.005) {
     const xy = name => lms[NAME2IDX[name]];          // landmark accessor
     
     const shoulderAngle = angleBetween(xy("right_shoulder"), xy("left_shoulder"));
