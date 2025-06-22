@@ -11,8 +11,8 @@ const VoiceAssistant = () => {
 
   useEffect(() => {
     console.log('[VoiceAssistant] Starting to load Vapi SDK...');
-    const apiKey = ''; // ADD API KEY
-    const assistant = ''; // ADD ASSITANT KEY
+    const apiKey = process.env.VAPI_API_KEY;
+    const assistant = process.env.VAPI_ASSISTANT_ID;
     const customPrompt = 'I have slouched shoulders and my back is bent.';
 
     loadVapi({
