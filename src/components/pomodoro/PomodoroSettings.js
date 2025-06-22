@@ -42,7 +42,7 @@ const PomodoroSettings = ({ onConfirm }) => {
             onChange={handleWorkDurationChange}
             placeholder="Select work duration"
           >
-            <Option value={10}>10 seconds</Option>
+            <Option value={5}>5 seconds</Option>
             <Option value={300}>5 minutes</Option>
             <Option value={600}>10 minutes</Option>
             <Option value={900}>15 minutes</Option>

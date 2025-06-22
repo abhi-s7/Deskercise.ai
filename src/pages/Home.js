@@ -56,6 +56,7 @@ const Home = () => {
           <Col xs={24} sm={8}>
             <Card 
               hoverable
+              onClick={() => navigate('/calendar')}
               style={style.card(calendarHovered)}
               onMouseEnter={() => setCalendarHovered(true)}
               onMouseLeave={() => setCalendarHovered(false)}
