@@ -1,10 +1,11 @@
 import React from 'react';
 import { Layout, Typography, Button, Space, Tag } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeftOutlined, ClockCircleOutlined, CalendarOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ClockCircleOutlined, CalendarOutlined, TrophyOutlined } from '@ant-design/icons';
 import Title from 'antd/es/typography/Title';
 import { themeConfig } from '../../theme/themeConfig';
 import { useSession } from '../../context/SessionContext';
+import { useScore } from '../../context/ScoreContext';
 
 const { Header: AntHeader } = Layout;
 const { Text } = Typography;
@@ -13,6 +14,7 @@ const Header = ({ showBackButton = false, backButtonText = "Back to Home" }) => 
   const navigate = useNavigate();
   const location = useLocation();
   const { activeSession, sessionData } = useSession();
+  const { score } = useScore();
 
   const handleBackClick = () => {
     navigate('/');
@@ -70,10 +72,18 @@ const Header = ({ showBackButton = false, backButtonText = "Back to Home" }) => 
       height: 64
     }}>
       <Title level={4} style={{ margin: 0, color: '#ffffff', marginLeft: '10px' }}>
-        Deskercise
+        Deskercise.ai
       </Title>
       
       {getSessionDisplay()}
+      
+      <Tag 
+        color="gold" 
+        icon={<TrophyOutlined />}
+        style={{ marginLeft: 16, fontSize: '12px', padding: '4px 8px' }}
+      >
+        Score: {score}
+      </Tag>
       
       {showBackButton && !isHomePage && (
         <Button 

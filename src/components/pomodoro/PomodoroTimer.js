@@ -16,7 +16,7 @@ const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
   const [showStretchModal, setShowStretchModal] = useState(false);
   const intervalRef = useRef(null);
   const navigate = useNavigate();
-  const { setSession, updateSessionData, clearSession } = useSession();
+  const { setSession, updateSessionData, clearSession, activeSession, sessionData } = useSession();
 
   // Request notification permission on component mount
   useEffect(() => {
@@ -25,8 +25,38 @@ const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
     }
   }, []);
 
-  // Reset timer when workDuration or cycles change
+  // Reset timer when workDuration or cycles change (but preserve session on mount)
+  const [isInitialMount, setIsInitialMount] = useState(true);
+  const [hasRestoredSession, setHasRestoredSession] = useState(false);
+  
+  // Handle session restoration when session data becomes available
   useEffect(() => {
+    if (activeSession === 'pomodoro' && sessionData && sessionData.cyclesCompleted !== undefined && !hasRestoredSession) {
+      setHasSessionStarted(true);
+      setCyclesCompleted(sessionData.cyclesCompleted || 0);
+      setHasRestoredSession(true);
+      console.log('Restored Pomodoro session:', sessionData);
+    } else if (activeSession !== 'pomodoro') {
+      setHasRestoredSession(false);
+    }
+  }, [activeSession, sessionData, hasRestoredSession]); // Run when session data changes
+
+  useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false);
+      setTimeLeft(workDuration);
+      return;
+    }
+    
+    // Don't clear session if we have an active Pomodoro session (user is just returning to the page)
+    if (activeSession === 'pomodoro') {
+      console.log('🛡️ Preventing session clear - active Pomodoro session detected');
+      setTimeLeft(workDuration);
+      return;
+    }
+    
+    // Only clear session when settings actually change and no active session exists
+    console.log('⚙️ Settings changed - resetting timer and clearing session');
     setTimeLeft(workDuration);
     setIsRunning(false);
     setCyclesCompleted(0);
@@ -35,7 +65,7 @@ const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-  }, [workDuration, cycles, clearSession]);
+  }, [workDuration, cycles, clearSession, isInitialMount, activeSession]);
 
   useEffect(() => {
     if (onSessionStateChange) {
