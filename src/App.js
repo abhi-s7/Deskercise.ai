@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { ConfigProvider, Layout } from 'antd';
 import { themeConfig } from './theme/themeConfig';
 import { SessionProvider } from './context/SessionContext';
+import { ScoreProvider } from './context/ScoreContext';
+import { ExerciseProvider } from './context/ExerciseContext';
 import Header from './components/layout/Header';
 import Home from './pages/Home';
 import Stretch from './pages/Stretch';
@@ -40,11 +42,15 @@ function AppContent() {
 function App() {
   return (
     <ConfigProvider theme={themeConfig}>
-      <SessionProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </SessionProvider>
+      <ScoreProvider>
+        <ExerciseProvider>
+          <SessionProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </SessionProvider>
+        </ExerciseProvider>
+      </ScoreProvider>
     </ConfigProvider>
   );
 }

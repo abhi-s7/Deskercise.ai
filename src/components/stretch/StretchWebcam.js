@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, Button, Typography, Space, Alert, Select } from 'antd';
 import { CameraOutlined, PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useExercise } from '../../context/ExerciseContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -14,9 +15,14 @@ const StretchWebcam = ({ onExerciseSelect }) => {
   const [isExerciseActive, setIsExerciseActive] = useState(false);
   const [exerciseCompleted, setExerciseCompleted] = useState(false);
   const [error, setError] = useState(null);
+  const lastCompletionRef = useRef({ time: 0, exercise: null });
+  
+  const { addCompletedExercise, resetDailyProgress } = useExercise();
   
   // Handle messages from iframe
   const handleIframeMessage = useCallback((event) => {
+    console.log('Received message from iframe:', event.data);
+    
     if (event.data.source === 'stretch-iframe') {
       switch (event.data.type) {
         case 'iframe-ready':
@@ -34,12 +40,63 @@ const StretchWebcam = ({ onExerciseSelect }) => {
           setIsExerciseActive(true);
           setExerciseCompleted(false);
           setError(null);
+          console.log('Exercise started, ready for completion');
           break;
         
         case 'exercise-completed':
-          setIsExerciseActive(false);
-          setExerciseCompleted(true);
-          setCurrentExercise(null);
+          const now = Date.now();
+          const timeSinceLastCompletion = now - lastCompletionRef.current.time;
+          const isSameExercise = lastCompletionRef.current.exercise === selectedExercise;
+          
+          console.log('Exercise completed! Processing...', { 
+            selectedExercise, 
+            isExerciseActive, 
+            exerciseCompleted, 
+            timeSinceLastCompletion,
+            isSameExercise,
+            lastCompletionData: lastCompletionRef.current
+          });
+          
+          // Only process if:
+          // 1. Exercise is currently active
+          // 2. Not already marked as completed 
+          // 3. Either different exercise OR enough time has passed (3 seconds)
+          const shouldProcess = isExerciseActive && 
+                               !exerciseCompleted && 
+                               (!isSameExercise || timeSinceLastCompletion > 3000);
+          
+          if (shouldProcess) {
+            console.log('Processing exercise completion...');
+            
+            setIsExerciseActive(false);
+            setExerciseCompleted(true);
+            setCurrentExercise(null);
+            
+            // Update completion tracking
+            lastCompletionRef.current = {
+              time: now,
+              exercise: selectedExercise
+            };
+            
+            // Add to completed exercises (no score increment for now)
+            if (selectedExercise) {
+              const exerciseName = selectedExercise.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              console.log('Adding completed exercise:', exerciseName);
+              addCompletedExercise(exerciseName);
+            } else {
+              console.warn('No selected exercise to add to completed list');
+            }
+          } else {
+            console.log('Ignoring duplicate/rapid completion message', { 
+              isExerciseActive, 
+              exerciseCompleted, 
+              timeSinceLastCompletion,
+              isSameExercise,
+              reason: !isExerciseActive ? 'not active' : 
+                     exerciseCompleted ? 'already completed' : 
+                     'too rapid/duplicate'
+            });
+          }
           break;
         
         case 'exercise-reset':
@@ -50,7 +107,7 @@ const StretchWebcam = ({ onExerciseSelect }) => {
           break;
       }
     }
-  }, []);
+  }, [selectedExercise, addCompletedExercise, isExerciseActive, exerciseCompleted, resetDailyProgress]);
 
   // Send message to iframe
   const sendMessageToIframe = useCallback((type, data) => {
@@ -158,6 +215,17 @@ const StretchWebcam = ({ onExerciseSelect }) => {
               disabled={!isExerciseActive && !exerciseCompleted}
             >
               Reset
+            </Button>
+            
+            <Button
+              type="dashed"
+              onClick={() => {
+                console.log('Resetting daily progress...');
+                resetDailyProgress();
+              }}
+              size="small"
+            >
+              Clear Progress
             </Button>
           </div>
 

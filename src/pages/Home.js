@@ -1,8 +1,8 @@
 import React from 'react';
 import { Typography, Button, Card, Space, Row, Col } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { PlayCircleOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
-import { FaAppleAlt } from 'react-icons/fa';
+import { GiTomato } from "react-icons/gi";
+import { PlayCircleOutlined, CalendarOutlined, UserOutlined, FireOutlined } from '@ant-design/icons';
 
 const { Title, Paragraph } = Typography;
 
@@ -10,6 +10,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [pomodoroHovered, setPomodoroHovered] = React.useState(false);
   const [calendarHovered, setCalendarHovered] = React.useState(false);
+  const [stretchHovered, setStretchHovered] = React.useState(false);
 
   const handleStretchClick = () => {
     navigate('/stretch');
@@ -33,7 +34,7 @@ const Home = () => {
     <div style={{ padding: '50px', height: '100%' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <Row gutter={[24, 24]} justify="center">
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12} md={6}>
             <Card 
               hoverable
               onClick={() => navigate('/pomodoro')}
@@ -42,7 +43,7 @@ const Home = () => {
               onMouseLeave={() => setPomodoroHovered(false)}
             >
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              <FaAppleAlt fontSize={48} />
+              <GiTomato fontSize={48} />
                 <Title level={3} style={{ marginBottom: 0 }}>
                   Pomodoro Mode
                 </Title>
@@ -53,7 +54,7 @@ const Home = () => {
             </Card>
           </Col>
           
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12} md={6}>
             <Card 
               hoverable
               onClick={() => navigate('/calendar')}
@@ -73,22 +74,27 @@ const Home = () => {
             </Card>
           </Col>
           
-          <Col xs={24} sm={8}>
+          <Col xs={24} sm={12} md={6}>
             <Card 
               hoverable
-              style={style.card(false)}
+              onClick={handleStretchClick}
+              style={style.card(stretchHovered)}
+              onMouseEnter={() => setStretchHovered(true)}
+              onMouseLeave={() => setStretchHovered(false)}
             >
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                <UserOutlined style={{ fontSize: 48, color: 'var(--ant-color-primary)' }} />
+                <FireOutlined style={{ fontSize: 48, color: '#ff7a45' }} />
                 <Title level={3} style={{ marginBottom: 0 }}>
-                  Your Profile
+                  Quick Stretch
                 </Title>
                 <Paragraph style={{ color: '#666' }}>
-                  View your progress and personal settings
+                  Start an individual stretching session
                 </Paragraph>
               </Space>
             </Card>
           </Col>
+          
+         
         </Row>
       </div>
     </div>

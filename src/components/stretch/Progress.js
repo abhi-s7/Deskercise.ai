@@ -1,6 +1,8 @@
 import React from 'react';
-import { Card, Space } from 'antd';
+import { Card, Space, Row, Col, Divider } from 'antd';
 import { BarChartOutlined } from '@ant-design/icons';
+import CompletedExercises from './CompletedExercises';
+import StretchProgress from './StretchProgress';
 
 const Progress = () => {
   return (
@@ -25,7 +27,14 @@ const Progress = () => {
         padding: '24px',
       }}
     >
-      {/* Progress content will be added later */}
+      <Row gutter={[24, 24]}>
+        <Col span={12}>
+          <StretchProgress />
+        </Col>
+        <Col span={12}>
+          <CompletedExercises />
+        </Col>
+      </Row>
     </Card>
   );
 };
