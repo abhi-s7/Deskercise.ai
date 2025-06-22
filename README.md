@@ -170,16 +170,6 @@ Webcam Feed ←→ Real-time Feedback ←→ Vapi Voice Coach
 - [ ] Wearable device integration
 - [ ] VR/AR stretch environments
 
----
-
-## 🏆 Awards & Recognition
-
-**🥇 CalHacks AI 2025 - Best AI Tool**
-
-Built in 36 hours, Deskercise represents the future of workplace wellness through intelligent, accessible, and engaging technology.
-
----
-
 ## 📞 Get Involved
 
 **Ready to transform workplace wellness?**
