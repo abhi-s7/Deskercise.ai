@@ -58,12 +58,12 @@ const LATERAL_NECK_TILT_WORKFLOW = {
         {
             name: "Tilt your head to the LEFT",
             checkFunction: checkLeftTilt,
-            instruction: "Slowly tilt your head so your left ear approaches your left shoulder"
+            instruction: "Slowly tilt your head so your right ear approaches your right shoulder"
         },
         {
             name: "Tilt your head to the RIGHT", 
             checkFunction: checkRightTilt,
-            instruction: "Slowly tilt your head so your right ear approaches your right shoulder"
+            instruction: "Slowly tilt your head so your left ear approaches your left shoulder"
         }
     ]
 };

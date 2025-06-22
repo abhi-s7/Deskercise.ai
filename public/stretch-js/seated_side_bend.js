@@ -313,27 +313,27 @@ const SEATED_SIDE_BEND_WORKFLOW = {
         {
             name: "Raise right arm overhead",
             checkFunction: checkSideBendArmUp,
-            instruction: "Lift your right arm straight up overhead, keeping left arm down"
+            instruction: "Lift your left arm straight up overhead, keeping right arm down"
         },
         {
             name: "Lean left to stretch right side",
             checkFunction: checkSideBendLeft,
-            instruction: "Keeping right arm up, gently lean your torso to the left to stretch your right side"
+            instruction: "Keeping left arm up, gently lean your torso to the right to stretch your left side"
         },
         {
             name: "Return to center",
             checkFunction: checkSideBendCenter,
-            instruction: "Slowly return to center and lower your right arm back to neutral"
+            instruction: "Slowly return to center and lower your left arm back to neutral"
         },
         {
             name: "Raise left arm overhead",
             checkFunction: checkSideBendLeftArmUp,
-            instruction: "Now lift your left arm straight up overhead, keeping right arm down"
+            instruction: "Now lift your right arm straight up overhead, keeping left arm down"
         },
         {
             name: "Lean right to stretch left side",
             checkFunction: checkSideBendRight,
-            instruction: "Keeping left arm up, gently lean your torso to the right to stretch your left side"
+            instruction: "Keeping right arm up, gently lean your torso to the left to stretch your right side"
         }
     ]
 };
