@@ -1,617 +1,236 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Card, Button, Typography, Space, Alert } from 'antd';
-import { CameraOutlined, VideoCameraOutlined, StopOutlined } from '@ant-design/icons';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { Card, Button, Typography, Space, Alert, Select } from 'antd';
+import { CameraOutlined, PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const StretchWebcam = () => {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const iframeRef = useRef(null);
+  const [isIframeReady, setIsIframeReady] = useState(false);
+  const [availableExercises, setAvailableExercises] = useState([]);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  const [currentExercise, setCurrentExercise] = useState(null);
+  const [isExerciseActive, setIsExerciseActive] = useState(false);
+  const [exerciseCompleted, setExerciseCompleted] = useState(false);
   const [error, setError] = useState(null);
   
-  // Progress and State Management
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [step1Complete, setStep1Complete] = useState(false);
-  const [step2Complete, setStep2Complete] = useState(false);
-  const [aiMessage, setAiMessage] = useState("Initializing camera and pose detection...");
-
-  // MediaPipe pose detection state
-  const [pose, setPose] = useState(null);
-  const [isPostureGood, setIsPostureGood] = useState(false);
-  const [postureCheckActive, setPostureCheckActive] = useState(false);
-  const [movementCheckActive, setMovementCheckActive] = useState(false);
-  const [movementDetected, setMovementDetected] = useState(false);
-
-  // --- MediaPipe Posture Logic (from PosturePage) ---
-  const KEYMAPPER = {
-    0:"nose",1:"left_eye_inner",2:"left_eye",3:"left_eye_outer",4:"right_eye_inner",
-    5:"right_eye",6:"right_eye_outer",7:"left_ear",8:"right_ear",9:"mouth_left",
-    10:"mouth_right",11:"left_shoulder",12:"right_shoulder",13:"left_elbow",
-    14:"right_elbow",15:"left_wrist",16:"right_wrist",17:"left_pinky",18:"right_pinky",
-    19:"left_index",20:"right_index",21:"left_thumb",22:"right_thumb",23:"left_hip",
-    24:"right_hip",25:"left_knee",26:"right_knee",27:"left_ankle",28:"right_ankle",
-    29:"left_heel",30:"right_heel",31:"left_foot_index",32:"right_foot_index"
-  };
-  
-  const NAME2IDX = Object.fromEntries(
-    Object.entries(KEYMAPPER).map(([i,n]) => [n, parseInt(i,10)])
-  );
-  
-  const deg = rad => rad * 180 / Math.PI;
-  
-  function angleBetween(p1, p2) {
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    return Math.abs(deg(Math.atan2(dy, dx)));
-  }
-  
-  function checkInitialPosition(lms, shoulderTol = 10, headTol = 10) {
-    const xy = name => lms[NAME2IDX[name]];
-    const shoulderAngle = angleBetween(xy("right_shoulder"), xy("left_shoulder"));
-    const headAngle = angleBetween(xy("right_eye"), xy("left_eye"));
-    const issues = [];
-    if (shoulderAngle > shoulderTol) issues.push("shoulders_not_level");
-    if (headAngle > headTol) issues.push("head_not_level");
-    return { ok: issues.length === 0, issues };
-  }
-
-  // Movement detection functions for Step 2
-  function checkArmRaise(lms) {
-    const xy = name => lms[NAME2IDX[name]];
-    const leftShoulder = xy("left_shoulder");
-    const rightShoulder = xy("right_shoulder");
-    const leftWrist = xy("left_wrist");
-    const rightWrist = xy("right_wrist");
-    
-    // Check if both arms are raised above shoulders
-    const leftArmRaised = leftWrist.y < leftShoulder.y;
-    const rightArmRaised = rightWrist.y < rightShoulder.y;
-    
-    return leftArmRaised && rightArmRaised;
-  }
-
-  function checkSquatPosition(lms) {
-    const xy = name => lms[NAME2IDX[name]];
-    const leftHip = xy("left_hip");
-    const rightHip = xy("right_hip");
-    const leftKnee = xy("left_knee");
-    const rightKnee = xy("right_knee");
-    
-    // Check if knees are bent (knees below hips)
-    const leftKneeBent = leftKnee.y > leftHip.y;
-    const rightKneeBent = rightKnee.y > rightHip.y;
-    
-    return leftKneeBent && rightKneeBent;
-  }
-
-  function checkMovement(lms, movementType = "arm_raise") {
-    switch(movementType) {
-      case "arm_raise":
-        return checkArmRaise(lms);
-      case "squat":
-        return checkSquatPosition(lms);
-      default:
-        return false;
-    }
-  }
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user'
-        } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setIsStreaming(true);
-        setError(null);
+  // Handle messages from iframe
+  const handleIframeMessage = useCallback((event) => {
+    if (event.data.source === 'stretch-iframe') {
+      switch (event.data.type) {
+        case 'iframe-ready':
+          setIsIframeReady(true);
+          setAvailableExercises(event.data.data.exercises || []);
+          break;
         
-        // Initialize MediaPipe Pose after camera starts
-        initializeMediaPipe();
-      }
-    } catch (err) {
-      setError('Unable to access camera. Please check permissions.');
-      console.error('Camera access error:', err);
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-      setIsStreaming(false);
-    }
-    
-    // Clean up MediaPipe
-    if (pose) {
-      pose.close();
-      setPose(null);
-    }
-  };
-
-  const initializeMediaPipe = () => {
-    // Check if MediaPipe is available
-    if (!window.Pose) {
-      setError('MediaPipe libraries not loaded. Please ensure the scripts are included.');
-      return;
-    }
-
-    const { Pose, POSE_CONNECTIONS } = window;
-    const { drawConnectors, drawLandmarks } = window;
-
-    const videoElement = videoRef.current;
-    const canvasElement = canvasRef.current;
-    
-    if (!videoElement || !canvasElement) return;
-
-    const canvasCtx = canvasElement.getContext('2d');
-    
-    // Initialize MediaPipe Pose
-    const poseInstance = new Pose({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
-    });
-    
-    poseInstance.setOptions({
-      modelComplexity: 1,
-      smoothLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    });
-
-    function onResults(results) {
-      // Clear and draw video frame
-      canvasCtx.save();
-      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-      
-      if (results.poseLandmarks) {
-        // Draw pose landmarks
-        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { lineWidth: 1 });
-        drawLandmarks(canvasCtx, results.poseLandmarks, { lineWidth: 1, radius: 1, color: '#FF0000' });
+        case 'exercise-selected':
+          setSelectedExercise(event.data.data.exercise);
+          setError(null);
+          break;
         
-        // Always check posture and update state
-        const postureCheck = checkInitialPosition(results.poseLandmarks);
-        setIsPostureGood(postureCheck.ok);
+        case 'exercise-started':
+          setCurrentExercise(event.data.data);
+          setIsExerciseActive(true);
+          setExerciseCompleted(false);
+          setError(null);
+          break;
         
-        // Check movement for step 2
-        if (currentStep === 2) {
-          const movement = checkMovement(results.poseLandmarks, "arm_raise"); // You can change movement type
-          setMovementDetected(movement);
-          
-          if (!movementCheckActive) {
-            // Show real-time movement feedback when not actively validating
-            if (movement) {
-              setAiMessage("✅ Great movement detected! Ready when you are - click 'Start Stretch' to validate.");
-            } else {
-              setAiMessage("Please raise both arms above your shoulders for the stretch exercise.");
-            }
-          }
-        }
+        case 'exercise-completed':
+          setIsExerciseActive(false);
+          setExerciseCompleted(true);
+          setCurrentExercise(null);
+          break;
         
-        // Show continuous feedback if we're in step 1
-        if (currentStep === 1) {
-          if (!postureCheckActive) {
-            // Show real-time feedback when not actively validating
-            if (postureCheck.ok) {
-              setAiMessage("✅ Posture is straight! Ready when you are - click 'Check Posture' to proceed.");
-            } else {
-              setAiMessage(`❌ Posture needs adjustment: ${postureCheck.issues.join(', ')}`);
-            }
-          }
-          // When actively checking, the validation logic in processStep1_CheckPosture handles the messages
-        }
-      }
-      canvasCtx.restore();
-    }
-
-    poseInstance.onResults(onResults);
-    setPose(poseInstance);
-
-    // Update initial message once MediaPipe is ready
-    setTimeout(() => {
-      if (currentStep === 1) {
-        setAiMessage("Stand straight and align your body with the camera. I'll continuously monitor your posture.");
-      }
-    }, 2000);
-
-    // Start camera processing
-    if (window.Camera) {
-      const camera = new window.Camera(videoElement, {
-        onFrame: async () => {
-          if (poseInstance) {
-            await poseInstance.send({ image: videoElement });
-          }
-        },
-        width: 640,
-        height: 480
-      });
-      camera.start().catch(error => {
-        console.error('Camera processing failed:', error);
-      });
-    }
-  };
-
-  // Real posture checking logic for Step 1
-  const processStep1_CheckPosture = async () => {
-    return new Promise((resolve) => {
-      setPostureCheckActive(true);
-      setAiMessage("Analyzing your posture... Please hold still and stand straight.");
-      
-      let goodPostureCount = 0;
-      const requiredGoodFrames = 30; // Need ~1 second of good posture at 30fps
-      let hasResolved = false;
-      
-      const checkInterval = setInterval(() => {
-        if (hasResolved) {
-          clearInterval(checkInterval);
-          return;
-        }
-        
-        if (isPostureGood) {
-          goodPostureCount++;
-          const secondsCount = Math.floor(goodPostureCount/6);
-          setAiMessage(`✅ Good posture! Hold it... (${secondsCount}/5 seconds)`);
-          
-          if (goodPostureCount >= requiredGoodFrames && !hasResolved) {
-            hasResolved = true;
-            clearInterval(checkInterval);
-            setPostureCheckActive(false);
-            setAiMessage("✅ Posture validation complete! Moving to next step...");
-            setTimeout(() => resolve(true), 1000);
-          }
-        } else {
-          goodPostureCount = 0; // Reset counter if posture becomes bad
-          setAiMessage("❌ Posture lost! Please straighten up and hold the position.");
-        }
-      }, 100); // Check every 100ms
-      
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        if (!hasResolved) {
-          hasResolved = true;
-          clearInterval(checkInterval);
-          setPostureCheckActive(false);
-          setAiMessage("⏰ Time's up! Let's try again. Make sure to stand straight.");
-          resolve(false);
-        }
-      }, 30000);
-    });
-  };
-
-  // Real movement checking logic for Step 2
-  const processStep2_CheckMovement = async () => {
-    return new Promise((resolve) => {
-      setMovementCheckActive(true);
-      setAiMessage("Starting stretch analysis... Please perform the arm raise exercise.");
-      
-      let goodMovementCount = 0;
-      const requiredGoodFrames = 45; // Need ~1.5 seconds of good movement
-      let hasResolved = false;
-      
-      const checkInterval = setInterval(() => {
-        if (hasResolved) {
-          clearInterval(checkInterval);
-          return;
-        }
-        
-        if (movementDetected) {
-          goodMovementCount++;
-          const secondsCount = Math.floor(goodMovementCount/6);
-          setAiMessage(`✅ Perfect stretch form! Hold it... (${secondsCount}/7 seconds)`);
-          
-          if (goodMovementCount >= requiredGoodFrames && !hasResolved) {
-            hasResolved = true;
-            clearInterval(checkInterval);
-            setMovementCheckActive(false);
-            setAiMessage("🎉 Excellent! Stretch exercise completed successfully!");
-            setTimeout(() => resolve(true), 1000);
-          }
-        } else {
-          goodMovementCount = 0; // Reset counter if movement is lost
-          setAiMessage("❌ Movement lost! Please raise both arms above your shoulders.");
-        }
-      }, 100);
-      
-      // Timeout after 45 seconds
-      setTimeout(() => {
-        if (!hasResolved) {
-          hasResolved = true;
-          clearInterval(checkInterval);
-          setMovementCheckActive(false);
-          setAiMessage("⏰ Time's up! Let's try the stretch again.");
-          resolve(false);
-        }
-      }, 45000);
-    });
-  };
-
-  // --- Step Execution Logic ---
-  const handleNextStep = async () => {
-    setIsProcessing(true);
-
-    if (currentStep === 1) {
-      const step1Success = await processStep1_CheckPosture();
-      if (step1Success) {
-        setStep1Complete(true);
-        setCurrentStep(2);
-        setAiMessage("Excellent! Your posture is perfect. Now, press 'Start Stretch' to begin the exercise.");
-      } else {
-        setAiMessage("Let's try again. Please adjust your posture - keep your shoulders level and head straight.");
+        case 'exercise-reset':
+          setIsExerciseActive(false);
+          setExerciseCompleted(false);
+          setCurrentExercise(null);
+          setSelectedExercise(null);
+          break;
       }
     }
-
-    if (currentStep === 2) {
-      const step2Success = await processStep2_CheckMovement(); // Use real movement detection
-      if (step2Success) {
-        setStep2Complete(true);
-        setCurrentStep(3);
-        setAiMessage("🎉 Excellent work! Stretch complete. You've done a fantastic job!");
-      } else {
-        setAiMessage("Almost there! Let's refine that form a bit. Please try the stretch again.");
-      }
-    }
-    
-    setIsProcessing(false);
-  };
-
-  // --- Lifecycle Hooks ---
-  useEffect(() => {
-    startCamera();
-    return () => stopCamera();
   }, []);
 
-  // Progress Dots Component
-  const ProgressDots = () => (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      margin: '20px 0',
-      gap: '0'
-    }}>
-      <div style={{
-        width: 40,
-        height: 40,
-        borderRadius: '50%',
-        backgroundColor: step1Complete ? '#52c41a' : (currentStep === 1 ? '#1890ff' : '#d9d9d9'),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '16px',
-        transition: 'all 0.3s ease',
-        boxShadow: step1Complete ? '0 0 10px rgba(82, 196, 26, 0.5)' : 
-                   (currentStep === 1 ? '0 0 10px rgba(24, 144, 255, 0.5)' : 'none'),
-        zIndex: 2,
-        position: 'relative'
-      }}>
-        {step1Complete ? '✓' : '1'}
-      </div>
-      
-      <div style={{
-        width: 60,
-        height: 2,
-        backgroundColor: step1Complete ? '#52c41a' : '#d9d9d9',
-        transition: 'all 0.3s ease',
-        position: 'relative',
-        zIndex: 1
-      }} />
-      
-      <div style={{
-        width: 40,
-        height: 40,
-        borderRadius: '50%',
-        backgroundColor: step2Complete ? '#52c41a' : (currentStep === 2 ? '#1890ff' : '#d9d9d9'),
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '16px',
-        transition: 'all 0.3s ease',
-        boxShadow: step2Complete ? '0 0 10px rgba(82, 196, 26, 0.5)' : 
-                   (currentStep === 2 ? '0 0 10px rgba(24, 144, 255, 0.5)' : 'none'),
-        zIndex: 2,
-        position: 'relative'
-      }}>
-        {step2Complete ? '✓' : '2'}
-      </div>
-    </div>
-  );
+  // Send message to iframe
+  const sendMessageToIframe = useCallback((type, data) => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({
+        type: type,
+        data: data,
+        source: 'react-app'
+      }, '*');
+    }
+  }, []);
 
-  // AI Message Box Component
-  const AIMessageBox = () => (
-    <div style={{
-      background: (postureCheckActive || movementCheckActive) ? 
-        'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)' :
-        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      borderRadius: 12,
-      padding: 20,
-      margin: '20px 0',
-      position: 'relative',
-      boxShadow: (postureCheckActive || movementCheckActive) ? 
-        '0 0 20px rgba(82, 196, 26, 0.4)' :
-        '0 0 20px rgba(102, 126, 234, 0.3)',
-      border: '1px solid rgba(255, 255, 255, 0.2)',
-      animation: (postureCheckActive || movementCheckActive) ? 'pulse 1s ease-in-out infinite' : 'glow 2s ease-in-out infinite alternate'
-    }}>
-      <style>
-        {`
-          @keyframes glow {
-            from {
-              box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-            }
-            to {
-              box-shadow: 0 0 30px rgba(102, 126, 234, 0.6), 0 0 40px rgba(118, 75, 162, 0.3);
-            }
-          }
-          
-          @keyframes pulse {
-            0%, 100% {
-              box-shadow: 0 0 20px rgba(82, 196, 26, 0.4);
-            }
-            50% {
-              box-shadow: 0 0 40px rgba(82, 196, 26, 0.8);
-            }
-          }
-        `}
-      </style>
-      
-      <div style={{
-        position: 'absolute',
-        top: -8,
-        left: 20,
-        background: (postureCheckActive || movementCheckActive) ? 
-          'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)' :
-          'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        padding: '4px 12px',
-        borderRadius: 12,
-        fontSize: '12px',
-        fontWeight: 'bold',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-      }}>
-        {(postureCheckActive || movementCheckActive) ? 
-          (postureCheckActive ? 'ANALYZING POSTURE' : 'ANALYZING MOVEMENT') : 
-          'AI COACH'}
-      </div>
-      
-      <div style={{
-        color: 'white',
-        fontSize: '14px',
-        lineHeight: '1.5',
-        marginTop: 8
-      }}>
-        {aiMessage}
-      </div>
-    </div>
-  );
+  // Handle exercise selection
+  const handleExerciseSelect = useCallback((exercise) => {
+    setSelectedExercise(exercise);
+    sendMessageToIframe('select-exercise', { exercise });
+  }, [sendMessageToIframe]);
+
+  // Handle start exercise
+  const handleStartExercise = useCallback(() => {
+    if (selectedExercise) {
+      sendMessageToIframe('start-exercise', {});
+    }
+  }, [selectedExercise, sendMessageToIframe]);
+
+  // Handle reset exercise
+  const handleResetExercise = useCallback(() => {
+    sendMessageToIframe('reset-exercise', {});
+  }, [sendMessageToIframe]);
+
+  // Set up message listener
+  useEffect(() => {
+    window.addEventListener('message', handleIframeMessage);
+    return () => {
+      window.removeEventListener('message', handleIframeMessage);
+    };
+  }, [handleIframeMessage]);
+
+  // Handle iframe load
+  const handleIframeLoad = () => {
+    // Iframe loaded, but we'll wait for the 'iframe-ready' message
+    console.log('Stretch iframe loaded');
+  };
 
   return (
     <Card
       title={
         <Space>
-          <VideoCameraOutlined />
+          <CameraOutlined />
           <span>Stretch Monitor</span>
         </Space>
       }
-      style={{
-        width: '50%',
-        borderRadius: 16,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      style={{ 
+        width: '100%', 
+        minHeight: '950px', // Minimum height to ensure camera is visible
+        height: '950px', // Fixed height
+        flex: '1 1 700px', // Flex properties to take space properly
         display: 'flex',
-        flexDirection: 'column',
-        height: '900px',
+        flexDirection: 'column'
       }}
       bodyStyle={{
-        padding: 24,
-        flex: '1 1 auto',
-        overflowY: 'auto',
+        flex: 1,
+        padding: 0,
         display: 'flex',
         flexDirection: 'column',
+        overflow: 'hidden'
       }}
     >
-      {error && (
-        <Alert
-          message="Camera Error"
-          description={error}
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      {/* Exercise Controls */}
+      <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          {/* Exercise Selection */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <Select
+              placeholder="Select an exercise..."
+              style={{ flex: 1 }}
+              value={selectedExercise}
+              onChange={handleExerciseSelect}
+              disabled={!isIframeReady || isExerciseActive}
+            >
+              {availableExercises.map(exercise => (
+                <Option key={exercise} value={exercise}>
+                  {exercise.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </Option>
+              ))}
+            </Select>
+            
+            <Button
+              type="primary"
+              icon={<PlayCircleOutlined />}
+              onClick={handleStartExercise}
+              disabled={!selectedExercise || isExerciseActive}
+            >
+              Start
+            </Button>
+            
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleResetExercise}
+              disabled={!isExerciseActive && !exerciseCompleted}
+            >
+              Reset
+            </Button>
+          </div>
 
+          {/* Status Messages */}
+          {!isIframeReady && (
+            <Alert
+              message="Loading stretch monitor..."
+              type="info"
+              showIcon
+            />
+          )}
+          
+          {isIframeReady && !selectedExercise && (
+            <Alert
+              message="Select an exercise to begin your stretch session"
+              type="info"
+              showIcon
+            />
+          )}
+          
+          {currentExercise && (
+            <Alert
+              message={`Currently performing: ${currentExercise.name}`}
+              type="success"
+              showIcon
+            />
+          )}
+          
+          {exerciseCompleted && (
+        <Alert
+              message="Exercise completed successfully! Great job!"
+              type="success"
+          showIcon
+            />
+          )}
+          
+          {error && (
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+            />
+          )}
+        </Space>
+      </div>
+
+      {/* Iframe Container */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {!isIframeReady && (
       <div style={{ 
-        position: 'relative', 
-        width: '100%', 
-        flex: '1 1 auto',
-        backgroundColor: '#f0f0f0',
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginBottom: 16,
-        minHeight: 250,
-      }}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            borderRadius: 8,
-            position: 'absolute',
-            top: 0,
-            left: 0
-          }}
-        />
-        <canvas
-          ref={canvasRef}
-          width={640}
-          height={480}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            borderRadius: 8,
             position: 'absolute',
             top: 0,
             left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#fafafa',
             zIndex: 1
-          }}
-        />
-        {!isStreaming && !error && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center',
-            zIndex: 2
           }}>
-            <CameraOutlined style={{ fontSize: 48, color: '#ccc' }} />
-            <div style={{ marginTop: 8, color: '#999' }}>Starting camera...</div>
+            <Text type="secondary">Loading stretch monitor...</Text>
           </div>
         )}
+        
+        <iframe
+          ref={iframeRef}
+          src="/stretch-js/stretch-iframe.html"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            borderRadius: '0 0 8px 8px'
+          }}
+          onLoad={handleIframeLoad}
+          title="Stretch Exercise Monitor"
+        />
       </div>
-
-      <ProgressDots />
-      <AIMessageBox />
-
-      <Space style={{ width: '100%', justifyContent: 'center', marginBottom: 16 }}>
-        {isStreaming && currentStep < 3 && (
-          <Button 
-            type="primary"
-            onClick={handleNextStep}
-            size="large"
-            loading={isProcessing}
-            disabled={isProcessing}
-          >
-            {currentStep === 1 && 'Check Posture'}
-            {currentStep === 2 && 'Start Stretch'}
-          </Button>
-        )}
-
-        {isStreaming && (
-          <Button 
-            danger 
-            icon={<StopOutlined />}
-            onClick={stopCamera}
-            size="large"
-          >
-            Stop Camera
-          </Button>
-        )}
-      </Space>
     </Card>
   );
 };
