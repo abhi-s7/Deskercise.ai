@@ -5,7 +5,7 @@ import { CameraOutlined, PlayCircleOutlined, ReloadOutlined } from '@ant-design/
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const StretchWebcam = () => {
+const StretchWebcam = ({ onExerciseSelect }) => {
   const iframeRef = useRef(null);
   const [isIframeReady, setIsIframeReady] = useState(false);
   const [availableExercises, setAvailableExercises] = useState([]);
@@ -67,7 +67,12 @@ const StretchWebcam = () => {
   const handleExerciseSelect = useCallback((exercise) => {
     setSelectedExercise(exercise);
     sendMessageToIframe('select-exercise', { exercise });
-  }, [sendMessageToIframe]);
+    
+    // Notify parent component
+    if (onExerciseSelect) {
+      onExerciseSelect(exercise);
+    }
+  }, [sendMessageToIframe, onExerciseSelect]);
 
   // Handle start exercise
   const handleStartExercise = useCallback(() => {
@@ -103,11 +108,11 @@ const StretchWebcam = () => {
           <span>Stretch Monitor</span>
         </Space>
       }
-      style={{ 
-        width: '100%', 
-        minHeight: '950px', // Minimum height to ensure camera is visible
-        height: '950px', // Fixed height
-        flex: '1 1 700px', // Flex properties to take space properly
+      style={{
+        width: '800px', // Fixed width for camera view
+        minHeight: '780px', // Minimum height to ensure camera is visible
+        height: '780px', // Fixed height
+        flexShrink: 0, // Don't shrink
         display: 'flex',
         flexDirection: 'column'
       }}
@@ -156,35 +161,11 @@ const StretchWebcam = () => {
             </Button>
           </div>
 
-          {/* Status Messages */}
+          {/* Minimal Status Messages - only essential ones */}
           {!isIframeReady && (
-            <Alert
+        <Alert
               message="Loading stretch monitor..."
               type="info"
-              showIcon
-            />
-          )}
-          
-          {isIframeReady && !selectedExercise && (
-            <Alert
-              message="Select an exercise to begin your stretch session"
-              type="info"
-              showIcon
-            />
-          )}
-          
-          {currentExercise && (
-            <Alert
-              message={`Currently performing: ${currentExercise.name}`}
-              type="success"
-              showIcon
-            />
-          )}
-          
-          {exerciseCompleted && (
-        <Alert
-              message="Exercise completed successfully! Great job!"
-              type="success"
           showIcon
             />
           )}

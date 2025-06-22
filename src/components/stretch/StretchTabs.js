@@ -2,21 +2,17 @@ import React, { useState } from 'react';
 import { Card, Tabs, Space } from 'antd';
 import { 
   HeartOutlined, 
-  ClockCircleOutlined, 
-  TrophyOutlined, 
   BookOutlined,
   PlayCircleOutlined,
   AudioOutlined
 } from '@ant-design/icons';
 import QuickStretchesTab from './QuickStretchesTab';
-import ProgressTab from './ProgressTab';
-import AchievementsTab from './AchievementsTab';
 import TipsTab from './TipsTab';
 import VoiceAssistant from './VoiceAssistant';
 
 const { TabPane } = Tabs;
 
-const StretchTabs = () => {
+const StretchTabs = ({ selectedExercise }) => {
   const [activeTab, setActiveTab] = useState('1');
 
   const handleTabChange = (key) => {
@@ -32,12 +28,12 @@ const StretchTabs = () => {
         </Space>
       }
       style={{
-        width: '50%',
+        width: '100%',
         borderRadius: 16,
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
         display: 'flex',
         flexDirection: 'column',
-        height: '900px',
+        height: '450px',
       }}
       bodyStyle={{
         flex: '1 1 auto',
@@ -49,7 +45,7 @@ const StretchTabs = () => {
         activeKey={activeTab} 
         onChange={handleTabChange}
         type="card"
-        size="middle"
+        size="small"
       >
         <TabPane 
           tab={
@@ -60,31 +56,7 @@ const StretchTabs = () => {
           } 
           key="1"
         >
-          <QuickStretchesTab />
-        </TabPane>
-
-        <TabPane 
-          tab={
-            <span>
-              <TrophyOutlined />
-              Progress
-            </span>
-          } 
-          key="2"
-        >
-          <ProgressTab />
-        </TabPane>
-
-        <TabPane 
-          tab={
-            <span>
-              <TrophyOutlined />
-              Achievements
-            </span>
-          } 
-          key="3"
-        >
-          <AchievementsTab />
+          <QuickStretchesTab selectedExercise={selectedExercise} />
         </TabPane>
 
         <TabPane 
@@ -94,7 +66,7 @@ const StretchTabs = () => {
               Tips & Guide
             </span>
           } 
-          key="4"
+          key="2"
         >
           <TipsTab />
         </TabPane>
@@ -106,7 +78,7 @@ const StretchTabs = () => {
               Voice Assistant
             </span>
           } 
-          key="5"
+          key="3"
         >
           <VoiceAssistant />
         </TabPane>

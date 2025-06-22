@@ -36,6 +36,12 @@
       height: 100%; 
       border-radius: 8px; 
     }
+    video {
+      transform: scaleX(-1); /* Flip video horizontally to create mirror effect */
+    }
+    canvas {
+      transform: scaleX(-1); /* Flip canvas to match video orientation */
+    }
     #message {
       position: absolute;
       top: 10px;
@@ -55,7 +61,7 @@
       padding: 16px;
       background: white;
       border-top: 1px solid #e8e8e8;
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 12px;
       flex-shrink: 0;
