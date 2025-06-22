@@ -1,159 +1,238 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Card, Button, Typography, Space, Alert } from 'antd';
-import { CameraOutlined, VideoCameraOutlined, StopOutlined } from '@ant-design/icons';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { Card, Button, Typography, Space, Alert, Select } from 'antd';
+import { CameraOutlined, PlayCircleOutlined, ReloadOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 const StretchWebcam = () => {
-  const videoRef = useRef(null);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const iframeRef = useRef(null);
+  const [isIframeReady, setIsIframeReady] = useState(false);
+  const [availableExercises, setAvailableExercises] = useState([]);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  const [currentExercise, setCurrentExercise] = useState(null);
+  const [isExerciseActive, setIsExerciseActive] = useState(false);
+  const [exerciseCompleted, setExerciseCompleted] = useState(false);
   const [error, setError] = useState(null);
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user'
-        } 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setIsStreaming(true);
-        setError(null);
+  
+  // Handle messages from iframe
+  const handleIframeMessage = useCallback((event) => {
+    if (event.data.source === 'stretch-iframe') {
+      switch (event.data.type) {
+        case 'iframe-ready':
+          setIsIframeReady(true);
+          setAvailableExercises(event.data.data.exercises || []);
+          break;
+        
+        case 'exercise-selected':
+          setSelectedExercise(event.data.data.exercise);
+          setError(null);
+          break;
+        
+        case 'exercise-started':
+          setCurrentExercise(event.data.data);
+          setIsExerciseActive(true);
+          setExerciseCompleted(false);
+          setError(null);
+          break;
+        
+        case 'exercise-completed':
+          setIsExerciseActive(false);
+          setExerciseCompleted(true);
+          setCurrentExercise(null);
+          break;
+        
+        case 'exercise-reset':
+          setIsExerciseActive(false);
+          setExerciseCompleted(false);
+          setCurrentExercise(null);
+          setSelectedExercise(null);
+          break;
       }
-    } catch (err) {
-      setError('Unable to access camera. Please check permissions.');
-      console.error('Camera access error:', err);
     }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = videoRef.current.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-      setIsStreaming(false);
-    }
-  };
-
-  useEffect(() => {
-    // Start camera automatically when component mounts
-    startCamera();
-
-    // Cleanup on unmount
-    return () => {
-      stopCamera();
-    };
   }, []);
+
+  // Send message to iframe
+  const sendMessageToIframe = useCallback((type, data) => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({
+        type: type,
+        data: data,
+        source: 'react-app'
+      }, '*');
+    }
+  }, []);
+
+  // Handle exercise selection
+  const handleExerciseSelect = useCallback((exercise) => {
+    setSelectedExercise(exercise);
+    sendMessageToIframe('select-exercise', { exercise });
+  }, [sendMessageToIframe]);
+
+  // Handle start exercise
+  const handleStartExercise = useCallback(() => {
+    if (selectedExercise) {
+      sendMessageToIframe('start-exercise', {});
+    }
+  }, [selectedExercise, sendMessageToIframe]);
+
+  // Handle reset exercise
+  const handleResetExercise = useCallback(() => {
+    sendMessageToIframe('reset-exercise', {});
+  }, [sendMessageToIframe]);
+
+  // Set up message listener
+  useEffect(() => {
+    window.addEventListener('message', handleIframeMessage);
+    return () => {
+      window.removeEventListener('message', handleIframeMessage);
+    };
+  }, [handleIframeMessage]);
+
+  // Handle iframe load
+  const handleIframeLoad = () => {
+    // Iframe loaded, but we'll wait for the 'iframe-ready' message
+    console.log('Stretch iframe loaded');
+  };
 
   return (
     <Card
       title={
         <Space>
-          <VideoCameraOutlined />
+          <CameraOutlined />
           <span>Stretch Monitor</span>
         </Space>
       }
-      style={{
-        width: '50%',
-        borderRadius: 16,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+      style={{ 
+        width: '100%', 
+        minHeight: '950px', // Minimum height to ensure camera is visible
+        height: '950px', // Fixed height
+        flex: '1 1 700px', // Flex properties to take space properly
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+      bodyStyle={{
+        flex: 1,
+        padding: 0,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'flex-start',
-        padding: '8px',
+        overflow: 'hidden'
       }}
     >
-      <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        <Title level={4} style={{ marginBottom: 8 }}>
-          Monitor Your Stretches
-        </Title>
-        <Text type="secondary">
-          Use your webcam to track your stretching form and posture
-        </Text>
+      {/* Exercise Controls */}
+      <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          {/* Exercise Selection */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <Select
+              placeholder="Select an exercise..."
+              style={{ flex: 1 }}
+              value={selectedExercise}
+              onChange={handleExerciseSelect}
+              disabled={!isIframeReady || isExerciseActive}
+            >
+              {availableExercises.map(exercise => (
+                <Option key={exercise} value={exercise}>
+                  {exercise.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </Option>
+              ))}
+            </Select>
+            
+            <Button
+              type="primary"
+              icon={<PlayCircleOutlined />}
+              onClick={handleStartExercise}
+              disabled={!selectedExercise || isExerciseActive}
+            >
+              Start
+            </Button>
+            
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleResetExercise}
+              disabled={!isExerciseActive && !exerciseCompleted}
+            >
+              Reset
+            </Button>
+          </div>
+
+          {/* Status Messages */}
+          {!isIframeReady && (
+            <Alert
+              message="Loading stretch monitor..."
+              type="info"
+              showIcon
+            />
+          )}
+          
+          {isIframeReady && !selectedExercise && (
+            <Alert
+              message="Select an exercise to begin your stretch session"
+              type="info"
+              showIcon
+            />
+          )}
+          
+          {currentExercise && (
+            <Alert
+              message={`Currently performing: ${currentExercise.name}`}
+              type="success"
+              showIcon
+            />
+          )}
+          
+          {exerciseCompleted && (
+        <Alert
+              message="Exercise completed successfully! Great job!"
+              type="success"
+          showIcon
+            />
+          )}
+          
+          {error && (
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+            />
+          )}
+        </Space>
       </div>
 
-      {error && (
-        <Alert
-          message="Camera Error"
-          description={error}
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
-
+      {/* Iframe Container */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {!isIframeReady && (
       <div style={{ 
-        position: 'relative', 
-        width: '100%', 
-        height: 300, 
-        backgroundColor: '#f0f0f0',
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginBottom: 16
-      }}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#fafafa',
+            zIndex: 1
+          }}>
+            <Text type="secondary">Loading stretch monitor...</Text>
+          </div>
+        )}
+        
+        <iframe
+          ref={iframeRef}
+          src="/stretch-js/stretch-iframe.html"
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
-            borderRadius: 8
+            border: 'none',
+            borderRadius: '0 0 8px 8px'
           }}
+          onLoad={handleIframeLoad}
+          title="Stretch Exercise Monitor"
         />
-        {!isStreaming && !error && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center'
-          }}>
-            <CameraOutlined style={{ fontSize: 48, color: '#ccc' }} />
-            <div style={{ marginTop: 8, color: '#999' }}>Starting camera...</div>
-          </div>
-        )}
-      </div>
-
-      <Space style={{ width: '100%', justifyContent: 'center' }}>
-        {!isStreaming ? (
-          <Button 
-            type="primary" 
-            icon={<VideoCameraOutlined />}
-            onClick={startCamera}
-            size="large"
-          >
-            Start Camera
-          </Button>
-        ) : (
-          <Button 
-            danger 
-            icon={<StopOutlined />}
-            onClick={stopCamera}
-            size="large"
-          >
-            Stop Camera
-          </Button>
-        )}
-      </Space>
-
-      <div style={{ marginTop: 16, padding: 12, backgroundColor: '#f6f6f6', borderRadius: 8 }}>
-        <Text strong>Tips for better tracking:</Text>
-        <ul style={{ margin: '8px 0 0 0', paddingLeft: 20 }}>
-          <li>Ensure good lighting</li>
-          <li>Position yourself in the center of the frame</li>
-          <li>Keep your full body visible</li>
-          <li>Maintain proper posture during stretches</li>
-        </ul>
       </div>
     </Card>
   );
 };
 
-export default StretchWebcam; 
+export default StretchWebcam;

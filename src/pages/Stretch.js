@@ -14,10 +14,9 @@ const Stretch = () => {
       padding: "32px",
       display: "flex",
       flexDirection: "row",
-      alignItems: "stretch",
+      alignItems: "flex-start",
       minHeight: "calc(100vh - 64px - 64px)",
-      gap: "24px",
-      overflow: "hidden"
+      gap: "24px"
     }}>
       <StretchWebcam />
       <StretchTabs />

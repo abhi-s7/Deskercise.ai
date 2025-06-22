@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stretch Exercise Tracker</title>
+  <style>
+    body { 
+      margin: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
+      background: #f5f5f5; 
+      overflow: hidden;
+      height: 100%;
+    }
+    html {
+      height: 100%;
+    }
+    #container { 
+      position: relative; 
+      width: 100%; 
+      height: 100%; 
+      display: flex;
+      flex-direction: column;
+    }
+    #video-container {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      background: #000;
+    }
+    video, canvas { 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      border-radius: 8px; 
+    }
+    #message {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 2;
+      white-space: nowrap;
+      max-width: 90%;
+      text-align: center;
+    }
+    #controls {
+      padding: 16px;
+      background: white;
+      border-top: 1px solid #e8e8e8;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    #exercise-selector {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    select, button {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      background: white;
+    }
+    select {
+      flex: 1;
+    }
+    button {
+      background: #1890ff;
+      color: white;
+      border-color: #1890ff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #40a9ff;
+      border-color: #40a9ff;
+    }
+    button:disabled {
+      background: #f5f5f5;
+      color: #bfbfbf;
+      border-color: #d9d9d9;
+      cursor: not-allowed;
+    }
+    #exercise-info {
+      background: #fafafa;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #e8e8e8;
+      display: none;
+    }
+    #exercise-info h3 {
+      margin: 0 0 8px 0;
+      color: #262626;
+      font-size: 16px;
+    }
+    #exercise-info p {
+      margin: 0;
+      color: #595959;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    #progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #f0f0f0;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    #progress-fill {
+      height: 100%;
+      background: #52c41a;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="video-container">
+      <div id="message">Select an exercise to begin</div>
+      <video id="input_video" autoplay muted playsinline></video>
+      <canvas id="output_canvas"></canvas>
+    </div>
+
+    <div id="controls">
+      <div id="exercise-selector">
+        <select id="exercise-select">
+          <option value="">Select an exercise...</option>
+        </select>
+        <button id="start-btn" disabled>Start</button>
+        <button id="reset-btn" disabled>Reset</button>
+      </div>
+      
+      <div id="exercise-info">
+        <h3 id="exercise-title"></h3>
+        <p id="exercise-description"></p>
+        <div id="progress-bar">
+          <div id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MediaPipe JS libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
+  
+  <!-- Exercise scripts -->
+  <script src="pose_utils.js"></script>
+  <script src="lateral_neck_tilt.js"></script>
+  <script src="neck_rotation.js"></script>
+  <script src="overhead_reach.js"></script>
+  <script src="thoracic_extension.js"></script>
+  <script src="shoulder_rolls.js"></script>
+  <script src="seated_side_bend.js"></script>
+  <script src="exercise_manager.js"></script>
+  
+  <script>
+    // Global variables
+    const videoElement = document.getElementById('input_video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const messageEl = document.getElementById('message');
+    const exerciseSelect = document.getElementById('exercise-select');
+    const startBtn = document.getElementById('start-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const exerciseInfo = document.getElementById('exercise-info');
+    const exerciseTitle = document.getElementById('exercise-title');
+    const exerciseDescription = document.getElementById('exercise-description');
+    const progressFill = document.getElementById('progress-fill');
+
+    let exerciseManager = null;
+    let isExerciseActive = false;
+    let pose = null;
+    let camera = null;
+
+    // Communication with parent React component
+    function sendMessageToParent(type, data) {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: type,
+          data: data,
+          source: 'stretch-iframe'
+        }, '*');
+      }
+    }
+
+    // Listen for messages from parent
+    window.addEventListener('message', function(event) {
+      if (event.data.source === 'react-app') {
+        handleParentMessage(event.data);
+      }
+    });
+
+    function handleParentMessage(message) {
+      switch (message.type) {
+        case 'select-exercise':
+          if (message.data.exercise) {
+            exerciseSelect.value = message.data.exercise;
+            exerciseSelect.dispatchEvent(new Event('change'));
+          }
+          break;
+        case 'start-exercise':
+          if (exerciseSelect.value) {
+            startBtn.click();
+          }
+          break;
+        case 'reset-exercise':
+          resetBtn.click();
+          break;
+      }
+    }
+
+    // Populate exercise selector
+    function populateExerciseSelector() {
+      try {
+        const availableExercises = getAvailableExercises();
+        exerciseSelect.innerHTML = '<option value="">Select an exercise...</option>';
+        
+        availableExercises.forEach(exercise => {
+          const option = document.createElement('option');
+          option.value = exercise;
+          option.textContent = exercise.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          exerciseSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error populating exercises:', error);
+        messageEl.textContent = 'Error loading exercises';
+      }
+    }
+
+    // Exercise selection handling
+    exerciseSelect.addEventListener('change', function() {
+      const selectedExercise = this.value;
+      if (selectedExercise) {
+        try {
+          const workflow = getExerciseWorkflow(selectedExercise);
+          exerciseTitle.textContent = workflow.name;
+          exerciseDescription.textContent = workflow.description;
+          exerciseInfo.style.display = 'block';
+          startBtn.disabled = false;
+          
+          // Notify parent of exercise selection
+          sendMessageToParent('exercise-selected', {
+            exercise: selectedExercise,
+            name: workflow.name,
+            description: workflow.description
+          });
+        } catch (error) {
+          console.error('Error loading exercise:', error);
+          exerciseInfo.style.display = 'none';
+          startBtn.disabled = true;
+          messageEl.textContent = 'Error loading exercise';
+        }
+      } else {
+        exerciseInfo.style.display = 'none';
+        startBtn.disabled = true;
+        messageEl.textContent = 'Select an exercise to begin';
+      }
+    });
+
+    // Start exercise
+    startBtn.addEventListener('click', function() {
+      const selectedExercise = exerciseSelect.value;
+      if (selectedExercise) {
+        try {
+          const workflow = getExerciseWorkflow(selectedExercise);
+          exerciseManager = new ExerciseManager(workflow);
+          isExerciseActive = true;
+          startBtn.disabled = true;
+          resetBtn.disabled = false;
+          exerciseSelect.disabled = true;
+          
+          // Show loading message
+          messageEl.textContent = 'Initializing camera... Please allow camera access.';
+          
+          // Initialize camera if not already done
+          initializeCamera();
+          
+          // Notify parent of exercise start
+          sendMessageToParent('exercise-started', {
+            exercise: selectedExercise,
+            name: workflow.name
+          });
+        } catch (error) {
+          console.error('Error starting exercise:', error);
+          messageEl.textContent = 'Error starting exercise. Please try again.';
+        }
+      }
+    });
+
+    // Reset exercise
+    resetBtn.addEventListener('click', function() {
+      if (exerciseManager) {
+        exerciseManager.reset();
+      }
+      isExerciseActive = false;
+      startBtn.disabled = false;
+      resetBtn.disabled = true;
+      exerciseSelect.disabled = false;
+      messageEl.textContent = 'Exercise reset. Click Start to begin again.';
+      progressFill.style.width = '0%';
+      
+      // Notify parent of exercise reset
+      sendMessageToParent('exercise-reset', {});
+    });
+
+    // Initialize MediaPipe Pose
+    function initializePose() {
+      pose = new Pose({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
+      });
+      pose.setOptions({
+        modelComplexity: 1,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        smoothSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+      pose.onResults(onResults);
+    }
+
+    // Initialize camera
+    function initializeCamera() {
+      if (!camera) {
+        try {
+          // Set canvas size to match video
+          canvasElement.width = 640;
+          canvasElement.height = 480;
+          
+          // Try MediaPipe Camera first
+          if (typeof Camera !== 'undefined') {
+            camera = new Camera(videoElement, {
+              onFrame: async () => {
+                if (pose) {
+                  await pose.send({image: videoElement});
+                }
+              },
+              width: 640,
+              height: 480
+            });
+            camera.start();
+          } else {
+            // Fallback to getUserMedia
+            navigator.mediaDevices.getUserMedia({ 
+              video: { 
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: 'user'
+              } 
+            }).then(stream => {
+              videoElement.srcObject = stream;
+              videoElement.play();
+              
+              // Start pose detection loop
+              function detectPose() {
+                if (pose && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+                  pose.send({image: videoElement});
+                }
+                requestAnimationFrame(detectPose);
+              }
+              detectPose();
+            }).catch(error => {
+              console.error('Camera access error:', error);
+              messageEl.textContent = 'Error accessing camera. Please check permissions.';
+            });
+          }
+          
+          // Debug: Check if video is playing
+          videoElement.addEventListener('loadedmetadata', () => {
+            console.log('Video loaded:', videoElement.videoWidth, 'x', videoElement.videoHeight);
+          });
+          
+          videoElement.addEventListener('play', () => {
+            console.log('Video started playing');
+            messageEl.textContent = 'Camera ready! Position yourself in view.';
+          });
+          
+        } catch (error) {
+          console.error('Camera initialization error:', error);
+          messageEl.textContent = 'Error initializing camera';
+        }
+      }
+    }
+
+    // Process pose results
+    function onResults(results) {
+      // Clear and draw video frame
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+      
+      if (results.poseLandmarks && isExerciseActive && exerciseManager) {
+        // Draw pose landmarks
+        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { lineWidth: 1 });
+        drawLandmarks(canvasCtx, results.poseLandmarks, { lineWidth: 1, radius: 1, color: '#FF0000' });
+        
+        // Process exercise
+        const result = exerciseManager.processLandmarks(results.poseLandmarks);
+        
+        // Update UI based on result
+        if (result.complete) {
+          messageEl.textContent = 'Exercise Complete! Well done!';
+          progressFill.style.width = '100%';
+          
+          // Notify parent of completion
+          sendMessageToParent('exercise-completed', {
+            exercise: exerciseSelect.value
+          });
+        } else if (result.ok) {
+          const progress = ((exerciseManager.workflow.holdDuration - result.remainingTime) / exerciseManager.workflow.holdDuration) * 100;
+          progressFill.style.width = progress + '%';
+          
+          if (result.holding) {
+            messageEl.textContent = `Hold position - ${(result.remainingTime / 1000).toFixed(1)}s remaining`;
+          } else {
+            messageEl.textContent = exerciseManager.getCurrentStep().instruction;
+          }
+        } else {
+          progressFill.style.width = '0%';
+          messageEl.textContent = exerciseManager.getCurrentStep().instruction;
+        }
+      }
+      
+      canvasCtx.restore();
+    }
+
+    // Initialize everything when page loads
+    window.addEventListener('load', function() {
+      populateExerciseSelector();
+      initializePose();
+      
+      // Notify parent that iframe is ready
+      sendMessageToParent('iframe-ready', {
+        exercises: getAvailableExercises()
+      });
+    });
+  </script>
+</body>
+</html> 

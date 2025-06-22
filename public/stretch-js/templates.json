@@ -1,0 +1,137 @@
+{
+  "lateral_neck_tilt": {
+    "description": "Drop one ear toward the same-side shoulder while sitting tall.",
+    "howToDo": [
+      "Sit upright with feet flat.",
+      "Slowly tilt your head so your ear approaches your shoulder.",
+      "Keep both shoulders level and relaxed.",
+      "Hold for the required time, then repeat to the other side."
+    ],
+    "trackingMetric": "Angle between ear-shoulder-hip landmarks; shoulder-line tilt (ΔY between shoulders).",
+    "matchRule": "ear-shoulder-hip angle < 40° AND shoulders level < 5° for ≥ 0.45 s",
+    "holdSecs": 3,
+    "benefit": "Releases tension in upper trapezius and scalene muscles."
+  },
+
+  "neck_rotation": {
+    "description": "Turn your head to look over one shoulder without moving your torso.",
+    "howToDo": [
+      "Sit tall, spine neutral.",
+      "Slowly rotate your head to the right until you feel a stretch.",
+      "Keep torso and hips facing forward.",
+      "Hold, return to centre, then switch sides."
+    ],
+    "trackingMetric": "Yaw difference between head-nose vector and torso vector (hip→shoulder midpoint).",
+    "matchRule": "head–torso yaw ≥ 25° AND torso yaw < 10°",
+    "holdSecs": 3,
+    "benefit": "Mobilises sternocleidomastoid and levator scapulae; reduces neck stiffness."
+  },
+  "overhead_reach": {
+    "description": "Lift both arms overhead, biceps next to ears, ribs down.",
+    "howToDo": [
+      "Raise both arms straight up.",
+      "Keep elbows straight and alongside ears.",
+      "Avoid arching lower back; engage core.",
+      "Hold position."
+    ],
+    "trackingMetric": "Elbows above eye level; elbow-shoulder-hip angle.",
+    "matchRule": "both elbows above eyes AND angle > 160°",
+    "holdSecs": 3,
+    "benefit": "Opens lats and thoracic spine, reversing slumped sitting."
+  },
+
+  "thoracic_extension": {
+    "description": "Hands behind head, lift chest upward to extend mid-back.",
+    "howToDo": [
+      "Place fingertips behind ears, elbows wide.",
+      "Inhale, lift sternum toward ceiling.",
+      "Keep lower back neutral.",
+      "Hold the open-chest position."
+    ],
+    "trackingMetric": "Increase in shoulder-hip-knee angle; elbow spread angle.",
+    "matchRule": "Δangle ≥ 10° AND elbows widen ≥ 20°",
+    "holdSecs": 3,
+    "benefit": "Reverses thoracic kyphosis and promotes upright posture."
+  },
+  "shoulder_rolls": {
+    "description": "Slow circular shrug: up, down.",
+    "howToDo": [
+      "Lift shoulders up toward ears.",
+      "Lower them back and down in a circular motion.",
+      "Perform three clockwise, three counter-clockwise."
+    ],
+    "trackingMetric": "Path of shoulder landmark hits four quadrants (up/down).",
+    "matchRule": "detect ≥ 1 full clockwise revolution within 4 s",
+    "holdSecs": 0,
+    "benefit": "Lubricates shoulder joints and reduces stiffness."
+  },
+
+  "seated_side_bend": {
+    "description": "Raise one arm overhead and lean torso sideways.",
+    "howToDo": [
+      "Left hand on chair, right arm overhead.",
+      "Lean torso left, stretching right side.",
+      "Keep opposite hip grounded.",
+      "Hold, then switch sides."
+    ],
+    "trackingMetric": "Coronal shoulder-hip-knee angle; hip vertical displacement.",
+    "matchRule": "side-bend angle ≥ 15° AND opposite hip lift < 5 px",
+    "holdSecs": 3,
+    "benefit": "Opens obliques and quadratus lumborum, easing lateral tightness."
+  },
+
+  "seated_spinal_twist": {
+    "description": "Twist torso, placing hand on chair back for leverage.",
+    "howToDo": [
+      "Place right hand on chair back, left on outer thigh.",
+      "Exhale, rotate torso right from waist.",
+      "Keep hips facing forward.",
+      "Hold, then repeat left."
+    ],
+    "trackingMetric": "Yaw difference shoulder-line vs hip-line.",
+    "matchRule": "yaw ≥ 25° AND hip yaw < 8°",
+    "holdSecs": 3,
+    "benefit": "Mobilises thoracic spine and improves rotational mobility."
+  },
+
+  "cat_cow": {
+    "description": "Alternate arching (cow) and rounding (cat) your spine.",
+    "howToDo": [
+      "Hands on knees, inhale, arch back—lift chest (cow).",
+      "Exhale, round spine—tuck chin (cat).",
+      "Hold each position ~2 s, cycle twice."
+    ],
+    "trackingMetric": "Shoulder-hip-knee angle oscillation.",
+    "matchRule": "cow angle > 185° THEN cat angle < 165°, each ≥ 2 s",
+    "holdSecs": 2,
+    "benefit": "Flexes and extends entire spine, reducing stiffness."
+  },
+
+  "wrist_flexor_stretch": {
+    "description": "Straight arm, palm down; use other hand to pull fingers toward floor.",
+    "howToDo": [
+      "Extend right arm at shoulder height, palm facing down.",
+      "With left hand, gently pull right fingers downward.",
+      "Keep right elbow straight.",
+      "Hold stretch, then switch."
+    ],
+    "trackingMetric": "Arm straightness angle; wrist flexion angle.",
+    "matchRule": "arm angle ≥ 175° AND wrist flex ≥ 45°",
+    "holdSecs": 3,
+    "benefit": "Relieves forearm flexor tightness from typing."
+  },
+
+  "wrist_extensor_stretch": {
+    "description": "Straight arm, palm up; pull fingers toward floor (wrist extension).",
+    "howToDo": [
+      "Extend right arm, palm facing up.",
+      "Use left hand to gently pull fingers downward.",
+      "Maintain straight elbow.",
+      "Hold, then alternate."
+    ],
+    "trackingMetric": "Arm straightness angle; wrist extension angle.",
+    "matchRule": "arm angle ≥ 175° AND wrist extension ≥ 45°",
+    "holdSecs": 3,
+    "benefit": "Releases tension in wrist extensors (mouse-hand strain)."
+  }
+}
