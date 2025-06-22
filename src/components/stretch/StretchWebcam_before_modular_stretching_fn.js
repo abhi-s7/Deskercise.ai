@@ -1,13 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, Button, Typography, Space, Alert } from 'antd';
 import { CameraOutlined, VideoCameraOutlined, StopOutlined } from '@ant-design/icons';
-import { checkMovement } from '../../logic/posture/postureDetectionUtils';
-import { getExerciseConfig, getStepConfig } from '../../logic/posture/exerciseConfig';
 
 const { Title, Text } = Typography;
-let stopProcessing = false;
 
-const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
+const StretchWebcam = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -22,14 +19,83 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
 
   // MediaPipe pose detection state
   const [pose, setPose] = useState(null);
+  const [isPostureGood, setIsPostureGood] = useState(false);
+  const [postureCheckActive, setPostureCheckActive] = useState(false);
+  const [movementCheckActive, setMovementCheckActive] = useState(false);
+  const [movementDetected, setMovementDetected] = useState(false);
 
-  // Get exercise configuration
-  const exerciseConfig = getExerciseConfig(exerciseType);
-  const totalSteps = exerciseConfig ? exerciseConfig.steps.length : 2;
+  // --- MediaPipe Posture Logic (from PosturePage) ---
+  const KEYMAPPER = {
+    0:"nose",1:"left_eye_inner",2:"left_eye",3:"left_eye_outer",4:"right_eye_inner",
+    5:"right_eye",6:"right_eye_outer",7:"left_ear",8:"right_ear",9:"mouth_left",
+    10:"mouth_right",11:"left_shoulder",12:"right_shoulder",13:"left_elbow",
+    14:"right_elbow",15:"left_wrist",16:"right_wrist",17:"left_pinky",18:"right_pinky",
+    19:"left_index",20:"right_index",21:"left_thumb",22:"right_thumb",23:"left_hip",
+    24:"right_hip",25:"left_knee",26:"right_knee",27:"left_ankle",28:"right_ankle",
+    29:"left_heel",30:"right_heel",31:"left_foot_index",32:"right_foot_index"
+  };
+  
+  const NAME2IDX = Object.fromEntries(
+    Object.entries(KEYMAPPER).map(([i,n]) => [n, parseInt(i,10)])
+  );
+  
+  const deg = rad => rad * 180 / Math.PI;
+  
+  function angleBetween(p1, p2) {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.abs(deg(Math.atan2(dy, dx)));
+  }
+  
+  function checkInitialPosition(lms, shoulderTol = 10, headTol = 10) {
+    const xy = name => lms[NAME2IDX[name]];
+    const shoulderAngle = angleBetween(xy("right_shoulder"), xy("left_shoulder"));
+    const headAngle = angleBetween(xy("right_eye"), xy("left_eye"));
+    const issues = [];
+    if (shoulderAngle > shoulderTol) issues.push("shoulders_not_level");
+    if (headAngle > headTol) issues.push("head_not_level");
+    return { ok: issues.length === 0, issues };
+  }
 
-  // Generic movement detection states
-  const [currentMovementStatus, setCurrentMovementStatus] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
+  // Movement detection functions for Step 2
+  function checkArmRaise(lms) {
+    const xy = name => lms[NAME2IDX[name]];
+    const leftShoulder = xy("left_shoulder");
+    const rightShoulder = xy("right_shoulder");
+    const leftWrist = xy("left_wrist");
+    const rightWrist = xy("right_wrist");
+    
+    // Check if both arms are raised above shoulders
+    const leftArmRaised = leftWrist.y < leftShoulder.y;
+    const rightArmRaised = rightWrist.y < rightShoulder.y;
+    
+    return leftArmRaised && rightArmRaised;
+  }
+
+  function checkSquatPosition(lms) {
+    const xy = name => lms[NAME2IDX[name]];
+    const leftHip = xy("left_hip");
+    const rightHip = xy("right_hip");
+    const leftKnee = xy("left_knee");
+    const rightKnee = xy("right_knee");
+    
+    // Check if knees are bent (knees below hips)
+    const leftKneeBent = leftKnee.y > leftHip.y;
+    const rightKneeBent = rightKnee.y > rightHip.y;
+    
+    return leftKneeBent && rightKneeBent;
+  }
+
+  function checkMovement(lms, movementType = "arm_raise") {
+    switch(movementType) {
+      case "arm_raise":
+        return checkArmRaise(lms);
+      case "squat":
+        return checkSquatPosition(lms);
+      default:
+        return false;
+    }
+  }
 
   const startCamera = async () => {
     try {
@@ -99,11 +165,7 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
       minTrackingConfidence: 0.5
     });
 
-   
-
     function onResults(results) {
-
-      if (stopProcessing) return; 
       // Clear and draw video frame
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -114,28 +176,36 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
         drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, { lineWidth: 1 });
         drawLandmarks(canvasCtx, results.poseLandmarks, { lineWidth: 1, radius: 1, color: '#FF0000' });
         
-        // Get current step configuration
-        const stepConfig = getStepConfig(exerciseType, currentStep);
+        // Always check posture and update state
+        const postureCheck = checkInitialPosition(results.poseLandmarks);
+        setIsPostureGood(postureCheck.ok);
         
-        if (stepConfig) {
-          // Check movement based on current step configuration
-          const movementResult = checkMovement(results.poseLandmarks, stepConfig.movementType);
-          const isMovementGood = movementResult.ok !== undefined ? movementResult.ok : movementResult;
+        // Check movement for step 2
+        if (currentStep === 2) {
+          const movement = checkMovement(results.poseLandmarks, "arm_raise"); // You can change movement type
+          setMovementDetected(movement);
           
-          // Update the generic movement state
-          setCurrentMovementStatus(isMovementGood);
-          
-          // Show real-time feedback ONLY when not validating
-          if (!isValidating) { // <---- this stops the loop
-            if (isMovementGood) {
-              console.log('Inside !isValidating, isMovementGood', stepConfig.instruction);
-              setAiMessage(`✅ ${stepConfig.instruction} - Looking good! Click button to validate.`);
+          if (!movementCheckActive) {
+            // Show real-time movement feedback when not actively validating
+            if (movement) {
+              setAiMessage("✅ Great movement detected! Ready when you are - click 'Start Stretch' to validate.");
             } else {
-              const issues = movementResult.issues || [];
-              console.log('Inside !isValidating, else', stepConfig.instruction);
-              setAiMessage(`❌ ${stepConfig.instruction}${issues.length > 0 ? ` (${issues.join(', ')})` : ''}`);
+              setAiMessage("Please raise both arms above your shoulders for the stretch exercise.");
             }
           }
+        }
+        
+        // Show continuous feedback if we're in step 1
+        if (currentStep === 1) {
+          if (!postureCheckActive) {
+            // Show real-time feedback when not actively validating
+            if (postureCheck.ok) {
+              setAiMessage("✅ Posture is straight! Ready when you are - click 'Check Posture' to proceed.");
+            } else {
+              setAiMessage(`❌ Posture needs adjustment: ${postureCheck.issues.join(', ')}`);
+            }
+          }
+          // When actively checking, the validation logic in processStep1_CheckPosture handles the messages
         }
       }
       canvasCtx.restore();
@@ -168,19 +238,14 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
     }
   };
 
-  // Generic step validation logic
-  const processStepValidation = async () => {
-    stopProcessing = true; 
-    const stepConfig = getStepConfig(exerciseType, currentStep);
-    if (!stepConfig) return false;
-    
+  // Real posture checking logic for Step 1
+  const processStep1_CheckPosture = async () => {
     return new Promise((resolve) => {
-      setIsValidating(true);
-      setTimeout(() => {
-        setAiMessage(`Analyzing... ${stepConfig.instruction}`);
-      }, 0);
+      setPostureCheckActive(true);
+      setAiMessage("Analyzing your posture... Please hold still and stand straight.");
       
-      let goodFrameCount = 0;
+      let goodPostureCount = 0;
+      const requiredGoodFrames = 30; // Need ~1 second of good posture at 30fps
       let hasResolved = false;
       
       const checkInterval = setInterval(() => {
@@ -189,36 +254,78 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
           return;
         }
         
-        if (currentMovementStatus) {
-          goodFrameCount++;
-          const secondsCount = Math.floor(goodFrameCount/6);
-          const totalSeconds = Math.floor(stepConfig.requiredFrames/6);
-          console.log('Inside processStepValidation, currentMovementStatus', currentMovementStatus);
-          setAiMessage(`✅ Good form! Hold it... (${secondsCount}/${totalSeconds} seconds)`);
+        if (isPostureGood) {
+          goodPostureCount++;
+          const secondsCount = Math.floor(goodPostureCount/6);
+          setAiMessage(`✅ Good posture! Hold it... (${secondsCount}/5 seconds)`);
           
-          if (goodFrameCount >= stepConfig.requiredFrames && !hasResolved) {
+          if (goodPostureCount >= requiredGoodFrames && !hasResolved) {
             hasResolved = true;
             clearInterval(checkInterval);
-            setIsValidating(false);
-            setAiMessage(stepConfig.successMessage);
-            stopProcessing = false;
+            setPostureCheckActive(false);
+            setAiMessage("✅ Posture validation complete! Moving to next step...");
             setTimeout(() => resolve(true), 1000);
           }
         } else {
-          goodFrameCount = 0;
-          console.log('Inside processStepValidation, else');
-          setAiMessage(`❌ ${stepConfig.failMessage}`);
+          goodPostureCount = 0; // Reset counter if posture becomes bad
+          setAiMessage("❌ Posture lost! Please straighten up and hold the position.");
         }
-      }, 100);
+      }, 100); // Check every 100ms
       
-      // Timeout
+      // Timeout after 30 seconds
       setTimeout(() => {
         if (!hasResolved) {
           hasResolved = true;
           clearInterval(checkInterval);
-          setIsValidating(false);
-          setAiMessage("⏰ Time's up! Let's try again.");
-          stopProcessing = false;
+          setPostureCheckActive(false);
+          setAiMessage("⏰ Time's up! Let's try again. Make sure to stand straight.");
+          resolve(false);
+        }
+      }, 30000);
+    });
+  };
+
+  // Real movement checking logic for Step 2
+  const processStep2_CheckMovement = async () => {
+    return new Promise((resolve) => {
+      setMovementCheckActive(true);
+      setAiMessage("Starting stretch analysis... Please perform the arm raise exercise.");
+      
+      let goodMovementCount = 0;
+      const requiredGoodFrames = 45; // Need ~1.5 seconds of good movement
+      let hasResolved = false;
+      
+      const checkInterval = setInterval(() => {
+        if (hasResolved) {
+          clearInterval(checkInterval);
+          return;
+        }
+        
+        if (movementDetected) {
+          goodMovementCount++;
+          const secondsCount = Math.floor(goodMovementCount/6);
+          setAiMessage(`✅ Perfect stretch form! Hold it... (${secondsCount}/7 seconds)`);
+          
+          if (goodMovementCount >= requiredGoodFrames && !hasResolved) {
+            hasResolved = true;
+            clearInterval(checkInterval);
+            setMovementCheckActive(false);
+            setAiMessage("🎉 Excellent! Stretch exercise completed successfully!");
+            setTimeout(() => resolve(true), 1000);
+          }
+        } else {
+          goodMovementCount = 0; // Reset counter if movement is lost
+          setAiMessage("❌ Movement lost! Please raise both arms above your shoulders.");
+        }
+      }, 100);
+      
+      // Timeout after 45 seconds
+      setTimeout(() => {
+        if (!hasResolved) {
+          hasResolved = true;
+          clearInterval(checkInterval);
+          setMovementCheckActive(false);
+          setAiMessage("⏰ Time's up! Let's try the stretch again.");
           resolve(false);
         }
       }, 45000);
@@ -228,29 +335,27 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
   // --- Step Execution Logic ---
   const handleNextStep = async () => {
     setIsProcessing(true);
-    
-    const stepSuccess = await processStepValidation();
-    
-    if (stepSuccess) {
-      // Mark current step as complete
-      if (currentStep === 1) setStep1Complete(true);
-      if (currentStep === 2) setStep2Complete(true);
-      
-      if (currentStep < totalSteps) {
-        // Move to next step
-        setCurrentStep(currentStep + 1);
-        const nextStepConfig = getStepConfig(exerciseType, currentStep + 1);
-        console.log('Inside handleNextStep, currentStep', currentMovementStatus);
-        setAiMessage(`Great! Now: ${nextStepConfig?.instruction || 'Next step'}`);
+
+    if (currentStep === 1) {
+      const step1Success = await processStep1_CheckPosture();
+      if (step1Success) {
+        setStep1Complete(true);
+        setCurrentStep(2);
+        setAiMessage("Excellent! Your posture is perfect. Now, press 'Start Stretch' to begin the exercise.");
       } else {
-        // All steps complete
-        setCurrentStep(totalSteps + 1);
-        setAiMessage("🎉 Exercise completed! Great job!");
+        setAiMessage("Let's try again. Please adjust your posture - keep your shoulders level and head straight.");
       }
-    } else {
-      // Step failed, try again
-      const currentStepConfig = getStepConfig(exerciseType, currentStep);
-      setAiMessage(`Let's try again. ${currentStepConfig?.instruction}`);
+    }
+
+    if (currentStep === 2) {
+      const step2Success = await processStep2_CheckMovement(); // Use real movement detection
+      if (step2Success) {
+        setStep2Complete(true);
+        setCurrentStep(3);
+        setAiMessage("🎉 Excellent work! Stretch complete. You've done a fantastic job!");
+      } else {
+        setAiMessage("Almost there! Let's refine that form a bit. Please try the stretch again.");
+      }
     }
     
     setIsProcessing(false);
@@ -325,18 +430,18 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
   // AI Message Box Component
   const AIMessageBox = () => (
     <div style={{
-      background: isValidating ? 
+      background: (postureCheckActive || movementCheckActive) ? 
         'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)' :
         'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       borderRadius: 12,
       padding: 20,
       margin: '20px 0',
       position: 'relative',
-      boxShadow: isValidating ? 
+      boxShadow: (postureCheckActive || movementCheckActive) ? 
         '0 0 20px rgba(82, 196, 26, 0.4)' :
         '0 0 20px rgba(102, 126, 234, 0.3)',
       border: '1px solid rgba(255, 255, 255, 0.2)',
-      animation: isValidating ? 'pulse 1s ease-in-out infinite' : 'glow 2s ease-in-out infinite alternate'
+      animation: (postureCheckActive || movementCheckActive) ? 'pulse 1s ease-in-out infinite' : 'glow 2s ease-in-out infinite alternate'
     }}>
       <style>
         {`
@@ -364,7 +469,7 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
         position: 'absolute',
         top: -8,
         left: 20,
-        background: isValidating ? 
+        background: (postureCheckActive || movementCheckActive) ? 
           'linear-gradient(135deg, #52c41a 0%, #389e0d 100%)' :
           'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
@@ -374,7 +479,9 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
         fontWeight: 'bold',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
       }}>
-        {isValidating ? 'ANALYZING' : 'AI COACH'}
+        {(postureCheckActive || movementCheckActive) ? 
+          (postureCheckActive ? 'ANALYZING POSTURE' : 'ANALYZING MOVEMENT') : 
+          'AI COACH'}
       </div>
       
       <div style={{
@@ -481,7 +588,7 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
       <AIMessageBox />
 
       <Space style={{ width: '100%', justifyContent: 'center', marginBottom: 16 }}>
-        {isStreaming && currentStep <= totalSteps && (
+        {isStreaming && currentStep < 3 && (
           <Button 
             type="primary"
             onClick={handleNextStep}
@@ -489,7 +596,8 @@ const StretchWebcam = ({ exerciseType = "neck_roll" }) => {
             loading={isProcessing}
             disabled={isProcessing}
           >
-            {getStepConfig(exerciseType, currentStep)?.name || `Step ${currentStep}`}
+            {currentStep === 1 && 'Check Posture'}
+            {currentStep === 2 && 'Start Stretch'}
           </Button>
         )}
 
