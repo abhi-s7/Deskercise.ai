@@ -1,5 +1,10 @@
 import React from "react";
-import { Typography } from "antd";
+import { Typography, Button, Space } from "antd";
+import { useNavigate } from "react-router-dom";
+import { HeartOutlined } from "@ant-design/icons";
+import StretchWebcam from "../components/stretch/StretchWebcam";
+import StretchTabs from "../components/stretch/StretchTabs";
+
 
 const { Title } = Typography;
 
@@ -8,13 +13,14 @@ const Stretch = () => {
     <div style={{
       padding: "32px",
       display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: "row",
+      alignItems: "stretch",
       minHeight: "calc(100vh - 64px - 64px)",
+      gap: "24px",
+      overflow: "hidden"
     }}>
-      <Title level={2}>Stretch Page</Title>
-      <p>This page will contain stretch exercises and content.</p>
+      <StretchWebcam />
+      <StretchTabs />
     </div>
   );
 };
