@@ -165,18 +165,18 @@ Webcam Feed ←→ Real-time Feedback ←→ Vapi Voice Coach
 <tr>
 <td align="center">
 <b>Abhishek Kumar</b><br>
-<i>Full Stack Lead</i><br>
+<i>Full Stack AI Lead</i><br>
 <a href="https://www.linkedin.com/in/abhi-s7/">LinkedIn</a>
 </td>
 <td align="center">
 <b>Mohamad Mansour</b><br>
 <i>AI/Computer Vision Engineer</i><br>
-<a href="https://www.linkedin.com/in/mohamadmansour/">LinkedIn</a>
+<a href="https://www.linkedin.com/in/mohamadmansourx/">LinkedIn</a>
 </td>
 <td align="center">
 <b>Rachel Lim</b><br>
 <i>Full Stack Developer</i><br>
-<a href="https://www.linkedin.com/in/rachellimuen/">LinkedIn</a>
+<a href="https://www.linkedin.com/in/rachellimruien/">LinkedIn</a>
 </td>
 <td align="center">
 <b>Megan Jacob</b><br>
