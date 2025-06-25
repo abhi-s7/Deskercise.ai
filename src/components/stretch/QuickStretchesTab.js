@@ -13,6 +13,19 @@ const QuickStretchesTab = ({ selectedExercise }) => {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Function to get the appropriate image for each exercise
+  const getExerciseImage = (exerciseKey) => {
+    const imageMap = {
+      'neck_rotation': '/images/neck_rotation.png',
+      'lateral_neck_tilt': '/images/lateral_neck_tilt.png',
+      //'seated_side_bend': '/images/exercise3.png',
+      'overhead_reach': '/images/overhead_reach.png',
+      'thoracic_extension': '/images/thoracic_extension.png',
+      'shoulder_rolls': '/images/shoulder_rolls.png'
+    };
+    return imageMap[exerciseKey] || '/images/neck_rotation.png';
+  };
+
   // Load exercise data from the iframe/stretch system
   useEffect(() => {
     const loadExercises = async () => {
@@ -30,7 +43,7 @@ const QuickStretchesTab = ({ selectedExercise }) => {
               'Slowly rotate your head to the right until you feel a stretch',
               'Slowly rotate your head to the left until you feel a stretch'
             ],
-            image: "/images/exercise1.png"
+            image: "/images/neck_rotation.png"
           },
           {
             key: 'lateral_neck_tilt',
@@ -43,24 +56,24 @@ const QuickStretchesTab = ({ selectedExercise }) => {
               'Slowly tilt your head so your right ear approaches your right shoulder',
               'Slowly tilt your head so your left ear approaches your left shoulder'
             ],
-            image: "/images/exercise2.png"
+            image: "/images/lateral_neck_tilt.png"
           },
-          {
-            key: 'seated_side_bend',
-            name: 'Seated Side Bend',
-            description: 'Raise one arm overhead and lean torso sideways to stretch the opposite side.',
-            difficulty: 'Intermediate',
-            duration: '18 sec',
-            instructions: [
-              'Sit tall with shoulders level and arms relaxed at your sides',
-              'Lift your left arm straight up overhead, keeping right arm down',
-              'Keeping left arm up, gently lean your torso to the right to stretch your left side',
-              'Slowly return to center and lower your left arm back to neutral',
-              'Now lift your right arm straight up overhead, keeping left arm down',
-              'Keeping right arm up, gently lean your torso to the left to stretch your right side'
-            ],
-            image: "/images/exercise3.png"
-          },
+          // {
+          //   key: 'seated_side_bend',
+          //   name: 'Seated Side Bend',
+          //   description: 'Raise one arm overhead and lean torso sideways to stretch the opposite side.',
+          //   difficulty: 'Intermediate',
+          //   duration: '18 sec',
+          //   instructions: [
+          //     'Sit tall with shoulders level and arms relaxed at your sides',
+          //     'Lift your left arm straight up overhead, keeping right arm down',
+          //     'Keeping left arm up, gently lean your torso to the right to stretch your left side',
+          //     'Slowly return to center and lower your left arm back to neutral',
+          //     'Now lift your right arm straight up overhead, keeping left arm down',
+          //     'Keeping right arm up, gently lean your torso to the left to stretch your right side'
+          //   ],
+          //   image: "/images/exercise3.png"
+          // },
           {
             key: 'overhead_reach',
             name: 'Overhead Reach',
@@ -71,7 +84,7 @@ const QuickStretchesTab = ({ selectedExercise }) => {
               'Sit upright with shoulders level and head straight',
               'Raise both arms overhead with fingers interlocked'
             ],
-            image: "/images/exercise1.png"
+            image: "/images/overhead_reach.png"
           },
           {
             key: 'thoracic_extension',
@@ -83,7 +96,7 @@ const QuickStretchesTab = ({ selectedExercise }) => {
               'Sit upright with shoulders level and head straight',
               'Place hands behind head and gently arch your upper back'
             ],
-            image: "/images/exercise2.png"
+            image: "/images/thoracic_extension.png"
           },
           {
             key: 'shoulder_rolls',
@@ -96,7 +109,7 @@ const QuickStretchesTab = ({ selectedExercise }) => {
               'Roll shoulders forward in a circular motion',
               'Roll shoulders backward in a circular motion'
             ],
-            image: "/images/exercise3.png"
+            image: "/images/shoulder_rolls.png"
           }
         ];
 
@@ -163,7 +176,7 @@ const QuickStretchesTab = ({ selectedExercise }) => {
                       instructions: workflow.steps.map(step => step.instruction || 'No instruction available'),
                       holdDuration: workflow.holdDuration || 3000,
                       steps: workflow.steps,
-                      image: "/images/exercise1.png" // Default image for now
+                      image: getExerciseImage(exerciseKey)
                     });
                   } catch (error) {
                     console.warn(`Error loading exercise ${exerciseKey}:`, error);
@@ -253,24 +266,24 @@ const QuickStretchesTab = ({ selectedExercise }) => {
     : null;
 
   return (
-    <div style={{ padding: '8px 0' }}> {/* Reduced padding for smaller height */}
+    <div style={{ padding: '4px 0' }}> {/* Further reduced padding */}
       {/* Main Exercise Card */}
       <Card
         style={{
           borderRadius: 12, // Smaller border radius
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)', // Smaller shadow
-          marginBottom: 16, // Reduced margin
+          marginBottom: 8, // Further reduced margin
           overflow: 'hidden'
         }}
-        bodyStyle={{ padding: 12 }} // Reduced padding
+        bodyStyle={{ padding: 8 }} // Further reduced padding
       >
         {currentExercise ? (
           /* Image Left, Content Right Layout */
-          <div style={{ display: 'flex', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             {/* Exercise Image - Left Side */}
             <div style={{ 
-              width: 150, // Fixed width for image
-              height: 120, // Fixed height for image
+              width: 100, // Smaller width for image
+              height: 80, // Smaller height for image
               backgroundColor: '#f0f0f0',
               borderRadius: 8,
               overflow: 'hidden',
@@ -290,12 +303,12 @@ const QuickStretchesTab = ({ selectedExercise }) => {
             {/* Exercise Content - Right Side */}
             <div style={{ flex: 1, minWidth: 0 }}>
               {/* Exercise Header */}
-              <div style={{ marginBottom: 8 }}>
-                <Title level={4} style={{ marginBottom: 4, fontSize: 16 }}>
+              <div style={{ marginBottom: 4 }}>
+                <Title level={5} style={{ marginBottom: 2, fontSize: 14 }}>
                   {currentExercise.name}
                 </Title>
                 
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
                   <Tag color={getDifficultyColor(currentExercise.difficulty)} size="small">
                     {currentExercise.difficulty}
                   </Tag>
@@ -306,8 +319,8 @@ const QuickStretchesTab = ({ selectedExercise }) => {
 
                 {/* Exercise Description */}
                 {currentExercise.description && (
-                  <div style={{ marginBottom: 8 }}>
-                    <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.3 }}>
+                  <div style={{ marginBottom: 4 }}>
+                    <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>
                       {currentExercise.description}
                     </Text>
                   </div>
@@ -316,24 +329,24 @@ const QuickStretchesTab = ({ selectedExercise }) => {
 
               {/* Instructions */}
               <div>
-                <Text strong style={{ fontSize: 13, marginBottom: 6, display: 'block' }}>
+                <Text strong style={{ fontSize: 11, marginBottom: 4, display: 'block' }}>
                   Instructions:
                 </Text>
                 <ol style={{ 
                   margin: 0, 
                   paddingLeft: 16,
-                  fontSize: 12,
-                  lineHeight: 1.4
+                  fontSize: 10,
+                  lineHeight: 1.3
                 }}>
-                  {currentExercise.instructions.slice(0, 4).map((instruction, index) => ( // Limit to 4 instructions
-                    <li key={index} style={{ marginBottom: 4 }}>
-                      <Text style={{ fontSize: 12 }}>{instruction}</Text>
+                  {currentExercise.instructions.slice(0, 3).map((instruction, index) => ( // Limit to 3 instructions
+                    <li key={index} style={{ marginBottom: 2 }}>
+                      <Text style={{ fontSize: 10 }}>{instruction}</Text>
                     </li>
                   ))}
-                  {currentExercise.instructions.length > 4 && (
-                    <li style={{ marginBottom: 4 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        ...and {currentExercise.instructions.length - 4} more steps
+                  {currentExercise.instructions.length > 3 && (
+                    <li style={{ marginBottom: 2 }}>
+                      <Text type="secondary" style={{ fontSize: 10 }}>
+                        ...and {currentExercise.instructions.length - 3} more steps
                       </Text>
                     </li>
                   )}
@@ -348,25 +361,25 @@ const QuickStretchesTab = ({ selectedExercise }) => {
             flexDirection: 'column',
             alignItems: 'center', 
             justifyContent: 'center',
-            padding: '40px 20px',
+            padding: '20px 10px',
             textAlign: 'center'
           }}>
             <div style={{ 
-              width: 80, 
-              height: 80, 
+              width: 60, 
+              height: 60, 
               backgroundColor: '#f0f0f0',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: 16
+              marginBottom: 8
             }}>
-              <PlayCircleOutlined style={{ fontSize: 32, color: '#bfbfbf' }} />
+              <PlayCircleOutlined style={{ fontSize: 24, color: '#bfbfbf' }} />
             </div>
-            <Title level={4} style={{ marginBottom: 8, color: '#8c8c8c' }}>
+            <Title level={5} style={{ marginBottom: 4, color: '#8c8c8c', fontSize: 14 }}>
               No Exercise Selected
             </Title>
-            <Text type="secondary" style={{ fontSize: 14 }}>
+            <Text type="secondary" style={{ fontSize: 12 }}>
               Choose an exercise from the dropdown above to see detailed instructions and guidance.
             </Text>
           </div>
@@ -374,7 +387,7 @@ const QuickStretchesTab = ({ selectedExercise }) => {
       </Card>
 
       {/* Simple Audio Icon Button */}
-      <div style={{ textAlign: 'center', marginTop: 16 }}>
+      <div style={{ textAlign: 'center', marginTop: 8 }}>
       <VoiceAssistant exercise={currentExercise} />
       </div>
     </div>

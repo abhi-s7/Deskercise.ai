@@ -19,15 +19,16 @@ const Progress = () => {
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
         display: 'flex',
         flexDirection: 'column',
-        height: '450px',
+        height: '100%',
+        minHeight: '200px',
       }}
       bodyStyle={{
         flex: '1 1 auto',
         overflowY: 'auto',
-        padding: '24px',
+        padding: '8px 12px 12px',
       }}
     >
-      <Row gutter={[24, 24]}>
+      <Row gutter={[12, 12]}>
         <Col span={12}>
           <StretchProgress />
         </Col>

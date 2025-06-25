@@ -72,10 +72,12 @@ const PosturePage = () => {
         const postureCheck = checkInitialPosition(results.poseLandmarks);
         if (postureCheck.ok) {
           messageEl.textContent = "✅ Posture is straight!";
-          messageEl.style.background = 'rgba(0,255,0,0.7)';
+          messageEl.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%)';
+          messageEl.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
         } else {
           messageEl.textContent = `❌ Not straight: ${postureCheck.issues.join(', ')}`;
-          messageEl.style.background = 'rgba(255,0,0,0.7)';
+          messageEl.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.9) 100%)';
+          messageEl.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
         }
       }
       canvasCtx.restore();
@@ -99,7 +101,8 @@ const PosturePage = () => {
       console.error('Camera start failed:', error);
       if (messageEl) {
         messageEl.textContent = `Error accessing camera: ${error.message}. Check permissions.`;
-        messageEl.style.background = 'rgba(255,0,0,0.7)';
+        messageEl.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.9) 100%)';
+        messageEl.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
       }
     }
 
@@ -109,33 +112,146 @@ const PosturePage = () => {
     };
   }, []); // Empty dependency array ensures this runs only once
 
+  const style = {
+    container: {
+      padding: '32px',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      flexDirection: 'column',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+      minHeight: 'calc(100vh - 64px)',
+      position: 'relative'
+    },
+    pageTitle: {
+      textAlign: 'center',
+      marginBottom: '32px',
+      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+      animation: 'gradientShift 3s ease-in-out infinite',
+      fontSize: '36px',
+      fontWeight: 800
+    },
+    headerSection: {
+      width: 640,
+      marginBottom: 32,
+      textAlign: 'center',
+      background: 'rgba(255, 255, 255, 0.8)',
+      borderRadius: 24,
+      padding: '32px',
+      backdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+      position: 'relative',
+      overflow: 'hidden'
+    },
+    cameraCard: {
+      width: 640,
+      height: 480,
+      position: 'relative',
+      background: 'rgba(255, 255, 255, 0.8)',
+      borderRadius: 24,
+      padding: '24px',
+      backdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+      overflow: 'hidden'
+    },
+    messageBox: {
+      position: 'absolute',
+      top: 20,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%)',
+      color: '#fff',
+      padding: '12px 20px',
+      borderRadius: 12,
+      fontSize: 16,
+      fontWeight: 600,
+      zIndex: 2,
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+      transition: 'all 0.3s ease'
+    },
+    video: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      borderRadius: 16
+    },
+    canvas: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      borderRadius: 16
+    }
+  };
+
   return (
-    <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-      <div style={{ width: 640, marginBottom: 20, textAlign: 'center' }}>
-        <Title level={2}>Posture Check Test Page</Title>
-        <Text type="secondary">An isolated environment to test the MediaPipe posture detection.</Text>
-        <Divider />
+    <div style={style.container}>
+      {/* Page Title */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 10
+      }}>
+        <Title level={1} style={style.pageTitle} className="gradient-text">
+          AI Posture Detection
+        </Title>
       </div>
-      <Card style={{ width: 640, height: 480, position: 'relative' }}>
-        <div ref={messageRef} style={{
+
+      {/* Header Section */}
+      <div style={style.headerSection}>
+        <div style={{
           position: 'absolute',
-          top: 10,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0,0,0,0.6)',
-          color: '#fff',
-          padding: '8px 12px',
-          borderRadius: 4,
-          fontSize: 14,
-          zIndex: 2,
-        }}>
-          Initializing...
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
+          zIndex: 1
+        }} />
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <Title level={2} style={{ marginBottom: 16, color: '#1e293b' }}>
+            Posture Check Test Page
+          </Title>
+          <Text style={{ color: '#64748b', fontSize: '16px' }}>
+            An isolated environment to test the MediaPipe posture detection with AI-powered analysis.
+          </Text>
+          <Divider style={{ margin: '24px 0' }} />
         </div>
-        <video ref={videoRef} autoPlay muted playsInline style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}></video>
-        <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}></canvas>
-      </Card>
+      </div>
+
+      {/* Camera Section */}
+      <div style={style.cameraCard}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(5, 150, 105, 0.05) 100%)',
+          zIndex: 1
+        }} />
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div ref={messageRef} style={style.messageBox}>
+            Initializing AI...
+          </div>
+          <video ref={videoRef} autoPlay muted playsInline style={style.video}></video>
+          <canvas ref={canvasRef} style={style.canvas}></canvas>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default PosturePage; 
+export default PosturePage;

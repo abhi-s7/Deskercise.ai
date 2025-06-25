@@ -166,9 +166,9 @@ const StretchWebcam = ({ onExerciseSelect }) => {
         </Space>
       }
       style={{
-        width: '800px', // Fixed width for camera view
-        minHeight: '780px', // Minimum height to ensure camera is visible
-        height: '780px', // Fixed height
+        width: '100%', // Responsive width
+        height: '100%', // Responsive height
+        minHeight: '400px', // Minimum height to ensure camera is visible
         flexShrink: 0, // Don't shrink
         display: 'flex',
         flexDirection: 'column'
@@ -274,7 +274,7 @@ const StretchWebcam = ({ onExerciseSelect }) => {
             width: '100%',
             height: '100%',
             border: 'none',
-            borderRadius: '0 0 8px 8px'
+            borderRadius: '0 0 8px 8px',
           }}
           onLoad={handleIframeLoad}
           title="Stretch Exercise Monitor"

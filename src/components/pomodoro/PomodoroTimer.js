@@ -7,7 +7,7 @@ import StretchModal from "./StretchModal";
 
 const { Title, Text } = Typography;
 
-const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
+const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange, fullHeight, showTitle }) => {
   const [timeLeft, setTimeLeft] = useState(workDuration);
   const [isRunning, setIsRunning] = useState(false);
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
@@ -291,46 +291,163 @@ const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
     }
   };
 
+  const style = {
+    card: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 24,
+      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: "24px 16px",
+      background: 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      position: 'relative',
+      overflow: 'hidden',
+      minHeight: fullHeight ? '100%' : 'auto',
+      boxSizing: 'border-box',
+    },
+    title: {
+      textAlign: 'center',
+      marginBottom: 16,
+      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+      animation: 'gradientShift 3s ease-in-out infinite',
+      fontSize: '2rem',
+      fontWeight: 800,
+      letterSpacing: '0.01em',
+      lineHeight: 1.2
+    },
+    content: {
+      textAlign: "center",
+      width: "100%",
+      position: 'relative',
+      zIndex: 2,
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100%'
+    },
+    timer: {
+      marginBottom: 30,
+      padding: '32px 0'
+    },
+    timerText: {
+      fontSize: "2.8rem",
+      margin: 0,
+      fontWeight: 700,
+      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+      textShadow: '0 4px 8px rgba(239, 68, 68, 0.3)'
+    },
+    cycleInfo: {
+      marginBottom: 32,
+      padding: '12px 12px',
+      background: 'rgba(99, 102, 241, 0.1)',
+      borderRadius: 16,
+      border: '1px solid rgba(99, 102, 241, 0.2)'
+    },
+    cycleText: {
+      fontSize: "1.2rem",
+      fontWeight: 600,
+      color: '#6366f1'
+    },
+    completedText: {
+      fontSize: "1rem",
+      fontWeight: 600,
+      color: '#10b981'
+    },
+    buttonGroup: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    button: {
+      height: '40px',
+      fontSize: '0.95rem',
+      fontWeight: 600,
+      borderRadius: 16,
+      padding: '0 28px',
+      border: 'none',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+    },
+    startButton: {
+      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      color: 'white',
+      border: 'none'
+    },
+    pauseButton: {
+      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      color: 'white',
+      border: 'none'
+    },
+    resetButton: {
+      background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+      color: 'white',
+      border: 'none'
+    },
+    stopButton: {
+      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      color: 'white',
+      border: 'none'
+    }
+  };
+
   return (
     <>
-      <Card
-        style={{
-          width: "60%",
-          borderRadius: 16,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-          margin: "0 auto",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <div style={{ textAlign: "center", width: "100%" }}>
-          <div style={{ marginBottom: 24 }}>
-            <Title level={1} style={{ fontSize: "4rem", margin: 0 }}>
+      <div style={style.card}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(220, 38, 38, 0.05) 100%)',
+          zIndex: 1
+        }} />
+        {showTitle && (
+          <Title level={2} style={style.title} className="gradient-text">
+            Pomodoro Timer
+          </Title>
+        )}
+        <div style={style.content}>
+          <div style={style.timer}>
+            <Title level={1} style={style.timerText}>
               {formatTime(timeLeft)}
             </Title>
           </div>
 
-          <div style={{ marginBottom: 32 }}>
+          <div style={style.cycleInfo}>
             {cyclesCompleted >= cycles ? (
-              <Text strong style={{ fontSize: "1.2rem", color: '#52c41a' }}>
+              <Text style={style.completedText}>
                 All Cycles Completed! 🎉
               </Text>
             ) : (
-              <Text strong style={{ fontSize: "1.2rem" }}>
+              <Text style={style.cycleText}>
                 Cycle {cyclesCompleted + 1} of {cycles}
               </Text>
             )}
           </div>
 
-          <Space size="large">
+          <div style={style.buttonGroup}>
             {!isRunning ? (
               <Button 
                 type="primary" 
                 size="large" 
                 icon={<PlayCircleOutlined />}
-                style={{ height: '48px', fontSize: '1.1rem' }}
+                style={{ ...style.button, ...style.startButton }}
                 onClick={handleStart}
               >
                 {cyclesCompleted >= cycles ? 'Start New Session' : 'Start'}
@@ -339,7 +456,7 @@ const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
               <Button 
                 size="large" 
                 icon={<PauseCircleOutlined />}
-                style={{ height: '48px', fontSize: '1.1rem' }}
+                style={{ ...style.button, ...style.pauseButton }}
                 onClick={handlePause}
               >
                 Pause
@@ -351,7 +468,7 @@ const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
                 <Button 
                   size="large" 
                   icon={<ReloadOutlined />}
-                  style={{ height: '48px', fontSize: '1.1rem' }}
+                  style={{ ...style.button, ...style.resetButton }}
                   disabled={isRunning}
                   onClick={handleReset}
                 >
@@ -365,7 +482,7 @@ const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
                 <Button 
                   size="large" 
                   icon={<UndoOutlined />}
-                  style={{ height: '48px', fontSize: '1.1rem' }}
+                  style={{ ...style.button, ...style.stopButton }}
                   disabled={isRunning}
                   onClick={handleStopSession}
                 >
@@ -373,9 +490,9 @@ const PomodoroTimer = ({ workDuration, cycles, onSessionStateChange }) => {
                 </Button>
               </Tooltip>
             )}
-          </Space>
+          </div>
         </div>
-      </Card>
+      </div>
 
       <StretchModal
         visible={showStretchModal}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Row, Col } from "antd";
+import { Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import PomodoroTimer from "../components/pomodoro/PomodoroTimer";
 import PomodoroSettings from "../components/pomodoro/PomodoroSettings";
@@ -22,7 +22,6 @@ const Pomodoro = () => {
   // Restore timer settings from session data when there's an active session
   useEffect(() => {
     if (activeSession === 'pomodoro' && sessionData && sessionData.workDuration && sessionData.totalCycles) {
-      console.log('🔄 Restoring timer settings from session:', sessionData);
       setTimerSettings({
         workDuration: sessionData.workDuration,
         cycles: sessionData.totalCycles
@@ -52,25 +51,30 @@ const Pomodoro = () => {
   };
 
   return (
-    <div style={{
-      padding: "32px",
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "stretch",
-      minHeight: "calc(100vh - 64px - 64px)",
-      gap: "24px",
-      overflow: "hidden"
-    }}>
-      <PomodoroTimer 
-        workDuration={timerSettings.workDuration}
-        cycles={timerSettings.cycles}
-        onSessionStateChange={handleSessionStateChange}
-      />
-      {hasSessionStarted ? (
-        <Progress />
-      ) : (
-        <PomodoroSettings onConfirm={handleSettingsConfirm} />
-      )}
+    <div className="pomodoro-outer-container">
+      {/* Page Title */}
+
+      {/* Content Layout */}
+      <div className="pomodoro-content-container">
+        {/* Timer Section */}
+        <div className="pomodoro-timer-section">
+          <PomodoroTimer fullHeight={true}
+            workDuration={timerSettings.workDuration}
+            cycles={timerSettings.cycles}
+            onSessionStateChange={handleSessionStateChange}
+            showTitle={true}
+          />
+        </div>
+
+        {/* Settings/Progress Section */}
+        <div className="pomodoro-content-section">
+          {hasSessionStarted ? (
+            <Progress fullHeight={true} />
+          ) : (
+            <PomodoroSettings fullHeight={true} onConfirm={handleSettingsConfirm} />
+          )}
+        </div>
+      </div>
     </div>
   );
 };
