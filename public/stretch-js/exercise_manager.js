@@ -126,12 +126,12 @@ const AVAILABLE_EXERCISES = {
         }
         return SHOULDER_ROLLS_WORKFLOW;
     },
-    'seated_side_bend': () => {
-        if (typeof SEATED_SIDE_BEND_WORKFLOW === 'undefined') {
-            throw new Error('SEATED_SIDE_BEND_WORKFLOW not loaded');
-        }
-        return SEATED_SIDE_BEND_WORKFLOW;
-    }
+    // 'seated_side_bend': () => {
+    //     if (typeof SEATED_SIDE_BEND_WORKFLOW === 'undefined') {
+    //         throw new Error('SEATED_SIDE_BEND_WORKFLOW not loaded');
+    //     }
+    //     return SEATED_SIDE_BEND_WORKFLOW;
+    // }
 };
 
 // Function to get exercise workflow by name

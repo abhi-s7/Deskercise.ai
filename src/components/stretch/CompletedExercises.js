@@ -10,7 +10,7 @@ const CompletedExercises = () => {
 
   return (
     <div>
-      <Title level={5} style={{ marginBottom: 16 }}>
+      <Title level={5} style={{ marginBottom: 8, fontSize: 13 }}>
         <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
         Completed Exercises
       </Title>
@@ -20,10 +20,10 @@ const CompletedExercises = () => {
           size="small"
           dataSource={completedExercises}
           renderItem={(exercise) => (
-            <List.Item key={exercise.id}>
+            <List.Item key={exercise.id} style={{ padding: '4px 0' }}>
               <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                 <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
-                <Text strong>{exercise.name}</Text>
+                <Text strong style={{ fontSize: 12 }}>{exercise.name}</Text>
               </div>
             </List.Item>
           )}
@@ -32,7 +32,7 @@ const CompletedExercises = () => {
         <Empty 
           description="No exercises completed yet"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          style={{ margin: '20px 0' }}
+          style={{ margin: '10px 0' }}
         />
       )}
     </div>

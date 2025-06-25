@@ -75,12 +75,12 @@ const NECK_ROTATION_WORKFLOW = {
         {
             name: "Rotate your head to the LEFT",
             checkFunction: checkLeftRotation,
-            instruction: "Slowly rotate your head to the right until you feel a stretch"
+            instruction: "Slowly rotate your head to the left until you feel a stretch"
         },
         {
             name: "Rotate your head to the RIGHT",
             checkFunction: checkRightRotation,
-            instruction: "Slowly rotate your head to the left until you feel a stretch"
+            instruction: "Slowly rotate your head to the right until you feel a stretch"
         }
     ]
 };

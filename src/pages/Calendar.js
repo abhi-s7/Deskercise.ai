@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { Typography } from "antd";
 import GoogleCalendar from "../components/calendar/GoogleCalendar";
 import CalendarAnalysis from "../components/calendar/CalendarAnalysis";
+
+const { Title } = Typography;
 
 const Calendar = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -24,10 +27,14 @@ const Calendar = () => {
       padding: "32px",
       minHeight: "calc(100vh - 64px - 64px)",
       display: "flex",
-      gap: "24px"
+      gap: "40px",
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)'
     }}>
-      {/* Calendar Card - 35% width (reduced from 40%) */}
-      <div style={{ width: "35%" }}>
+      {/* Calendar Card - 35% width */}
+      <div style={{ 
+        width: "35%",
+        animation: 'floating 6s ease-in-out infinite'
+      }}>
         <GoogleCalendar 
           onConnectionChange={handleConnectionChange}
           onEventsUpdate={handleEventsUpdate}
@@ -35,8 +42,12 @@ const Calendar = () => {
         />
       </div>
       
-      {/* Analysis Card - 65% width (increased from 60%) */}
-      <div style={{ width: "65%" }}>
+      {/* Analysis Card - 65% width */}
+      <div style={{ 
+        width: "65%",
+        animation: 'floating 6s ease-in-out infinite',
+        animationDelay: '1s'
+      }}>
         <CalendarAnalysis 
           isConnected={isConnected}
           events={events}
